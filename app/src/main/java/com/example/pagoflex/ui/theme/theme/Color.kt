@@ -1,4 +1,4 @@
-package com.example.pagoflex.ui.theme
+package com.example.pagoflex.ui.theme.theme
 
 import androidx.compose.ui.graphics.Color
 
