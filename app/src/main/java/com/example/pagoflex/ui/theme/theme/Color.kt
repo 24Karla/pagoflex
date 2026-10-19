@@ -2,10 +2,13 @@ package com.example.pagoflex.ui.theme.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Primario = Color(0xFF087653)
+val PrimarioClaro = Color(0xFF087653)
+val PrimarioOscuro = Color(0xFF065D43)
 val PrimarioSuave = Color(0xFFBFDCD9)
-val PrimarioClaro = Color(0xFFD9ECEA)
-val Fondo = Color(0xFFF4F8F7)
+val FondoClaro = Color(0xFFD9ECEA)
+val FondoOscuro = Color(0xFF0E1A2B)
+val FondoMasOscuro = Color(0xFF070A14)
+val PrimarioProfundo = Color(0xFF000013)
 val TextoPrincipal = Color(0xFF263238)
 val TextoSecundario = Color(0xFF687A7A)
 val Borde = Color(0xFFD9ECEA)
