@@ -2,24 +2,42 @@ package com.example.pagoflex.ui.theme.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 
 private val ColoresOscuros = darkColorScheme(
     primary = PrimarioOscuro,
-    secondary = FondoOscuro,
-    tertiary = PrimarioProfundo
+    background = FondoOscuro,
+    primaryContainer = PrimarioProfundo,
+    onBackground = TextoOscuro,
+    onPrimary = Blanco,
+    onTertiary = Blanco
+
+
 )
 
 private val ColoresClaros = lightColorScheme(
     primary = PrimarioClaro,
-    secondary = PrimarioSuave,
-    tertiary = FondoClaro
+    background = FondoClaro,
+    primaryContainer = PrimarioSuave,
+    onBackground = TextoClaro,
+    onSecondary = Blanco,
+    onTertiary = Blanco
+
+)
+
+private val Formas = Shapes(
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(20.dp)
 )
 
 @Composable
@@ -42,6 +60,7 @@ fun PagoflexTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Tipografia,
-        content = content
+        content = content,
+        shapes = Formas
     )
 }
