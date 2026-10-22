@@ -22,6 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.ui.theme.Dimens
+import com.example.pagoflex.ui.theme.PagoFlexTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,7 +45,7 @@ fun UsuarioScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
+                .padding(Dimens.espacioPantalla),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -53,7 +55,7 @@ fun UsuarioScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(Dimens.espacioGrande))
 
             Button(
                 onClick = onSelectRolUsuario,
@@ -69,7 +71,7 @@ fun UsuarioScreen(
                 Text(text = "Soy Usuario", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.espacioMedio))
 
             Button(
                 onClick = onSelectRolAgente,
@@ -85,7 +87,7 @@ fun UsuarioScreen(
                 Text(text = "Soy Agente PagoFlex", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.espacioMedio))
 
             Button(
                 onClick = onSelectRolEjecutivo,
@@ -107,7 +109,7 @@ fun UsuarioScreen(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun UsuarioScreenPreview() {
-    MaterialTheme {
+    PagoFlexTheme {
         UsuarioScreen()
     }
 }

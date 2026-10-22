@@ -32,6 +32,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.pagoflex.ui.theme.Dimens
+import com.example.pagoflex.ui.theme.PagoFlexTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,29 +66,29 @@ fun FormularioScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(Dimens.espacioPantalla),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
         ) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(Dimens.espacioPantalla)) {
                     Text(
                         text = "¿Algo no cuadra con tus pagos?",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Dimens.espacioMini))
                     Text(
                         text = "Indica el motivo de la incidencia para la cuota $folioCompromiso.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(Dimens.espacioMedio))
 
                     ExposedDropdownMenuBox(
                         expanded = expandedMenu,
@@ -119,7 +121,7 @@ fun FormularioScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Dimens.espacioChico))
 
                     OutlinedTextField(
                         value = comentario,
@@ -161,7 +163,7 @@ fun FormularioScreen(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun FormularioScreenPreview() {
-    MaterialTheme {
+    PagoFlexTheme {
         FormularioScreen()
     }
 }

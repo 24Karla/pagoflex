@@ -32,6 +32,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.pagoflex.ui.theme.Dimens
+import com.example.pagoflex.ui.theme.PagoFlexTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,22 +56,22 @@ fun ConfiguracionesScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(Dimens.espacioPantalla),
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
         ) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(Dimens.espacioPantalla)) {
                     Text(
                         text = "Preferencias de Notificaciones",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(Dimens.espacioChico))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -90,7 +92,7 @@ fun ConfiguracionesScreen(
                     }
 
                     HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
+                        modifier = Modifier.padding(vertical = Dimens.espacioChico),
                         color = MaterialTheme.colorScheme.outlineVariant
                     )
 
@@ -120,14 +122,14 @@ fun ConfiguracionesScreen(
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(Dimens.espacioPantalla)) {
                     Text(
                         text = "Privacidad y Seguridad",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimens.espacioChico))
                     Text(
                         text = "En cumplimiento con la Ley 19.628 / 21.719, PagoFlex guarda solo lo necesario. No almacenamos datos de tarjetas de crédito o cuentas bancarias.",
                         style = MaterialTheme.typography.bodyMedium,
@@ -154,7 +156,7 @@ fun ConfiguracionesScreen(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun ConfiguracionesScreenPreview() {
-    MaterialTheme {
+    PagoFlexTheme {
         ConfiguracionesScreen()
     }
 }

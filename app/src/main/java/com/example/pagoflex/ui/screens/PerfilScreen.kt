@@ -38,11 +38,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.ui.theme.Dimens
+import com.example.pagoflex.ui.theme.PagoFlexTheme
 
 @Composable
 fun PerfilScreen(
@@ -86,11 +87,11 @@ fun PerfilContent(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(Dimens.espacioMedio))
 
             Box(
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(Dimens.tamanoAvatar)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
@@ -98,7 +99,7 @@ fun PerfilContent(
                 Text(text = "👤", fontSize = 40.sp)
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Dimens.espacioChico))
 
             Text(
                 text = nombreUsuario,
@@ -113,22 +114,22 @@ fun PerfilContent(
             )
 
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.padding(Dimens.espacioPantalla),
+                verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
             ) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(Dimens.espacioPantalla)) {
                         Text(
                             text = "Avisos de Vencimiento",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(Dimens.espacioChico))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -149,12 +150,12 @@ fun PerfilContent(
                         }
 
                         if (avisosActivos) {
-                            Spacer(Modifier.height(12.dp))
+                            Spacer(Modifier.height(Dimens.espacioMedio))
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .horizontalScroll(rememberScrollState()),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                             ) {
                                 listOf(1, 3, 5).forEach { dias ->
                                     val seleccionado = (diasAnticipacion == dias)
@@ -178,20 +179,20 @@ fun PerfilContent(
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(Dimens.espacioPantalla)) {
                         Text(
                             text = "Recomendar una organización",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(Dimens.espacioMini))
                         Text(
                             text = "Panadería Trigal - Contactado",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(Dimens.espacioMedio))
                         Button(
                             onClick = onRecomendarOtra,
                             modifier = Modifier.fillMaxWidth(),
@@ -207,14 +208,14 @@ fun PerfilContent(
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(Dimens.espacioPantalla)) {
                         Text(
                             text = "Mis Reportes",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(Dimens.espacioChico))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -238,7 +239,7 @@ fun PerfilContent(
                                 )
                             }
                         }
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(Dimens.espacioMini))
                         Text(
                             text = "No reconozco - Gimnasio Smartfit - En espera de respuesta",
                             style = MaterialTheme.typography.bodyMedium,
@@ -247,7 +248,7 @@ fun PerfilContent(
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(Dimens.espacioChico))
 
                 Button(
                     onClick = onChangeRol,
@@ -270,7 +271,7 @@ fun PerfilContent(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun PerfilPagoFlexPreview() {
-    MaterialTheme {
+    PagoFlexTheme {
         PerfilContent(
             nombreUsuario = "Jesús Gonzales",
             rutEnmascarado = "RUT 11.111.111-1",
