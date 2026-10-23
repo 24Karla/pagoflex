@@ -1,46 +1,50 @@
 package com.example.pagoflex.ui.components
 
-import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.pagoflex.R
-import com.example.pagoflex.ui.theme.Dimens
-import com.example.pagoflex.ui.theme.MiRegistroTheme
+import com.example.pagoflex.ui.theme.PagoFlexTheme
 
 @Composable
 fun AvatarCircular(
-    @DrawableRes imagen: Int,
-    descripcion: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    iniciales: String = "PF",
+    texto: String = iniciales,
+    tamano: Dp = 80.dp
 ) {
-    Image(
-        painter = painterResource(id = imagen),
-        contentDescription = descripcion,
-        contentScale = ContentScale.Crop,
+    val mostrarTexto = if (iniciales != "PF") iniciales else texto
+
+    Box(
         modifier = modifier
-            .size(Dimens.tamanoAvatar)
-            .shadow(elevation = 6.dp, shape = CircleShape)
+            .size(tamano)
             .clip(CircleShape)
-            .border(Dimens.bordeAvatar, MaterialTheme.colorScheme.surface, CircleShape)
-    )
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = mostrarTexto.take(2).uppercase(),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun AvatarCircularPreview() {
-    MiRegistroTheme {
-        AvatarCircular(imagen = R.drawable.avatar_usuario, descripcion = "", modifier = Modifier.padding(16.dp))
+    PagoFlexTheme {
+        AvatarCircular(iniciales = "PF")
     }
 }
