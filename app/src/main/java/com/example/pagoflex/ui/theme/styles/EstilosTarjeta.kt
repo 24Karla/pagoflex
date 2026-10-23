@@ -7,7 +7,7 @@ import androidx.compose.material3.CardElevation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Shape
-import com.example.pagoflex.ui.theme.theme.Dimens
+import com.example.pagoflex.ui.theme.Dimens
 
 object EstilosTarjeta {
     val forma: Shape = RoundedCornerShape(Dimens.radioTarjeta)

@@ -7,8 +7,7 @@ import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Shape
 import com.example.pagoflex.ui.theme.Dimens
-import com.example.pagoflex.ui.theme.theme.Dimens
-import com.example.pagoflex.ui.theme.theme.GrisDeshabilitado
+import com.example.pagoflex.ui.theme.GrisDeshabilitado
 
 object EstilosCampo {
     val forma: Shape = RoundedCornerShape(Dimens.radioCampo)
