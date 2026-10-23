@@ -1,10 +1,7 @@
 package com.example.pagoflex.ui.screens
 
 import android.Manifest
-import android.content.contentvalues
 import android.graphics.Bitmap
-import android.net.Uri
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch

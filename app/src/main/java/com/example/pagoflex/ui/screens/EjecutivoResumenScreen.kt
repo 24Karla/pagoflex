@@ -1,5 +1,6 @@
 package com.example.pagoflex.ui.screens
 
+import com.example.pagoflex.ui.components.GraficoBarras
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
