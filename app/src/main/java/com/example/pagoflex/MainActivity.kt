@@ -4,8 +4,19 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+<<<<<<< HEAD
 import com.example.pagoflex.navigation.AppNavegacion
 import com.example.pagoflex.ui.theme.PagoFlexTheme
+=======
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.pagoflex.ui.theme.theme.PagoflexTheme
+>>>>>>> dev-karla
 
 class MainActivity : ComponentActivity() {
 

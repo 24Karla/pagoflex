@@ -1,3 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">pagoflex</string>
+
+    <!-- Pantalla formulario -->
+    <string name="titulo_formulario">Crear cuenta</string>
+    <string name="banner_titulo">únete a nosotros</string>
+    <string name="banner_subtitulo">Completa tus datos</string>
+    <string name="seccion_datos">Datos personales</string>
+    <string name="seccion_preferencias">Preferencias</string>
+    <string name="campo_nombre">Nombre completo</string>
+    <string name="campo_correo">Correo electronico</string>
+    <string name="campo_contrasena">Contraseña</string>
+    <string name="etiqueta_nivel">Nivel de experencia</string>
+    <string name="opcion_noticias">Recibir novedades por correo</string>
+    <string name="opcion_termino">Acepto términos y condiciones</string>
+    <string name="btn_registro">Registrarme</string>
+    <string name="btn_limpiar">Limpiar</string>
+    <string name="registro_exitoso">Registro exitoso. Bienvenido/a %1$s</string>
+
+    <!-- Pantalla perfil -->
+    <string name="titulo_perfil">Mi perfil</string>
+    <string name="seccion_sobre_mi">Sobre mi</string>
+    <string name="seccion_intereses">Intereses</string>
+    <string name="btn_seguir">Seguir</string>
+    <string name="btn_siguiendo">Siguiendo</string>
+
+    <!-- Descripcion talkback-->
+    <string name="cd_banner">Ilustracion del formulario</string>
+    <string name="cd_portada">Imagen que debemos poner</string>  <!-- cambiar esto luego segun como querramos -->
+    <string name="cd_avatar">Imagen del avatar</string>
+    <string name="cd_mostrar_contrasena">Mostrar contraseña</string>
+    <string name="cd_ocultar_contrasena">Ocultar contraseña</string>
+
+    <!-- Hecho basado en las clases, luego puede cambiar a nuestro interes -->
 </resources>
