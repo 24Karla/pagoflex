@@ -24,4 +24,5 @@ object Dimens {
     val tamanoAvatar = 120.dp
     val bordeAvatar = 4.dp
     val tamanoIcono = 20.dp
+    val espacioTarjeta = 12.dp
 }
