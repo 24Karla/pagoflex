@@ -15,6 +15,7 @@ val TextoPrincipal = Color(0xFF1C1B1F)         // Texto negro/gris oscuro princi
 val TextoSecundario = Color(0xFF757575)        // Texto secundario / subtítulos
 
 // --- Colores de Estado y Cumplimiento (RF-02 / RN-10) ---
+val GrisDeshabilitado = Color(0xFFBDBDBD)
 val EstadoPendiente = Color(0xFFF57C00)        // Naranja para cuotas pendientes
 val EstadoVencido = Color(0xFFD32F2F)          // Rojo para cuotas vencidas / alertas
 val EstadoPagado = Color(0xFF388E3C)           // Verde para cuotas al día / pagadas
