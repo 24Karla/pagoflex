@@ -1,99 +1,44 @@
 package com.example.pagoflex.ui.components
 
-import com.example.pagoflex.model.DatoGrafico
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.example.pagoflex.model.DatoGrafico
 
 @Composable
 fun GraficoBarras(
-    datos: List<DatoGrafico>,
-    colores: List<Color>,
-    modifier: Modifier = Modifier
+    datos: List<DatoGrafico> = emptyList(),
+    modifier: Modifier = Modifier,
+    colorBarra: Color = MaterialTheme.colorScheme.primary
 ) {
-    val medidorTexto = rememberTextMeasurer()
-    val colorTexto = MaterialTheme.colorScheme.onSurface
-    val colorEje = MaterialTheme.colorScheme.outline
-
-    val progreso = remember(datos) { Animatable(0f) }
-    LaunchedEffect(datos) {
-        progreso.animateTo(1f, animationSpec = tween(durationMillis = 800))
-    }
-
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .height(220.dp)
+            .height(180.dp)
     ) {
         if (datos.isEmpty()) return@Canvas
-
-        val margenSuperior = 20.dp.toPx()
-        val margenInferior = 24.dp.toPx()
-        val altoDisponible = size.height - margenSuperior - margenInferior
-        val baseY = size.height - margenInferior
-
-        val valorMaximo = datos.maxOf { it.valor }.coerceAtLeast(1)
-        val anchoColumna = size.width / datos.size
-        val anchoBarra = anchoColumna * 0.6f
-
-        drawLine(
-            color = colorEje,
-            start = Offset(0f, baseY),
-            end = Offset(size.width, baseY),
-            strokeWidth = 1.dp.toPx()
-        )
+        val maxValor = (datos.maxOfOrNull { it.valor } ?: 1).toFloat()
+        val anchoEspacio = size.width / datos.size
+        val anchoBarra = anchoEspacio * 0.5f
 
         datos.forEachIndexed { indice, dato ->
-            val altoBarra = altoDisponible * (dato.valor.toFloat() / valorMaximo) * progreso.value
-            val inicioColumna = indice * anchoColumna
-            val x = inicioColumna + (anchoColumna - anchoBarra) / 2
-            val y = baseY - altoBarra
+            val altoBarra = (dato.valor / maxValor) * (size.height * 0.8f)
+            val x = (indice * anchoEspacio) + (anchoEspacio - anchoBarra) / 2
+            val y = size.height - altoBarra
 
             drawRoundRect(
-                color = colores[indice % colores.size],
+                color = colorBarra,
                 topLeft = Offset(x, y),
                 size = Size(anchoBarra, altoBarra),
-                cornerRadius = CornerRadius(6.dp.toPx())
-            )
-
-            val textoValor = medidorTexto.measure(
-                text = dato.valor.toString(),
-                style = TextStyle(fontSize = 12.sp, color = colorTexto)
-            )
-            drawText(
-                textLayoutResult = textoValor,
-                topLeft = Offset(
-                    x = x + (anchoBarra - textoValor.size.width) / 2,
-                    y = y - textoValor.size.height - 2.dp.toPx()
-                )
-            )
-
-            val textoEtiqueta = medidorTexto.measure(
-                text = dato.etiqueta,
-                style = TextStyle(fontSize = 12.sp, color = colorTexto)
-            )
-            drawText(
-                textLayoutResult = textoEtiqueta,
-                topLeft = Offset(
-                    x = inicioColumna + (anchoColumna - textoEtiqueta.size.width) / 2,
-                    y = baseY + 4.dp.toPx()
-                )
+                cornerRadius = CornerRadius(8f, 8f)
             )
         }
     }
