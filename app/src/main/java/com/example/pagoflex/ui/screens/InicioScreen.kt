@@ -24,6 +24,7 @@ import com.example.pagoflex.ui.theme.PagoFlexTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InicioScreen(
+    rol: String = "usuario",
     onNavegarCompromisos: () -> Unit = {},
     onNavegarHistorial: () -> Unit = {},
     onNavegarFormulario: () -> Unit = {},
@@ -35,7 +36,7 @@ fun InicioScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Menú Principal", fontWeight = FontWeight.Bold) }
+                title = { Text("PagoFlex · ${rol.replaceFirstChar { it.uppercase() }}", fontWeight = FontWeight.Bold) }
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -48,21 +49,28 @@ fun InicioScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
         ) {
-            TarjetaSeccion(titulo = "Rol Cliente / Usuario") {
-                BotonPrincipal(texto = "Mis Compromisos", onClick = onNavegarCompromisos)
-                BotonPrincipal(texto = "Registrar Pago", onClick = onNavegarFormulario)
-                BotonPrincipal(texto = "Historial de Pagos", onClick = onNavegarHistorial)
-                BotonSecundario(texto = "Mi Perfil", onClick = onNavegarPerfil)
+            if (rol == "usuario") {
+                Text("Hola, Jesús", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Aquí van tus pagos de este mes", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TarjetaSeccion(titulo = "Total por pagar este mes") {
+                    Text("\$120.690", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    Text("Próximo vencimiento: 15 de octubre")
+                }
             }
-
-            TarjetaSeccion(titulo = "Rol Agente de Cobranza") {
-                BotonPrincipal(texto = "Módulo Agente", onClick = onNavegarAgente)
+            when (rol) {
+                "agente" -> TarjetaSeccion(titulo = "Agente PagoFlex") {
+                    BotonPrincipal(texto = "Reportes de cobranza", onClick = onNavegarAgente)
+                }
+                "ejecutivo" -> TarjetaSeccion(titulo = "Ejecutivo de Empresa") {
+                    BotonPrincipal(texto = "Resumen ejecutivo", onClick = onNavegarEjecutivo)
+                }
+                else -> TarjetaSeccion(titulo = "Compromisos") {
+                    BotonPrincipal(texto = "Mis Compromisos", onClick = onNavegarCompromisos)
+                    BotonPrincipal(texto = "Registrar Pago", onClick = onNavegarFormulario)
+                    BotonPrincipal(texto = "Historial de Pagos", onClick = onNavegarHistorial)
+                    BotonSecundario(texto = "Mi Perfil", onClick = onNavegarPerfil)
+                }
             }
-
-            TarjetaSeccion(titulo = "Rol Ejecutivo") {
-                BotonPrincipal(texto = "Resumen Ejecutivo", onClick = onNavegarEjecutivo)
-            }
-
             BotonSecundario(texto = "Cerrar Sesión", onClick = onCerrarSesion)
         }
     }

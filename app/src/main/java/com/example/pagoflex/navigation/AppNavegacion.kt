@@ -1,6 +1,10 @@
 package com.example.pagoflex.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -22,24 +26,25 @@ import com.example.pagoflex.ui.screens.UsuarioScreen
 @Composable
 fun AppNavegacion() {
     val navController = rememberNavController()
+    var ultimoMontoSolicitud by rememberSaveable { mutableStateOf("") }
+    var ultimoConceptoSolicitud by rememberSaveable { mutableStateOf("") }
 
-    NavHost(
-        navController = navController,
-        startDestination = Ruta.Login.ruta
-    ) {
-        // --- AUTENTICACIÓN E INICIO ---
+    NavHost(navController = navController, startDestination = Ruta.Login.ruta) {
         composable(Ruta.Login.ruta) {
-            UsuarioScreen(
-                onLoginExitoso = {
-                    navController.navigate(Ruta.Inicio.ruta) {
-                        popUpTo(Ruta.Login.ruta) { inclusive = true }
-                    }
+            UsuarioScreen { rol ->
+                navController.navigate(Ruta.Inicio.crear(rol)) {
+                    popUpTo(Ruta.Login.ruta) { inclusive = true }
                 }
-            )
+            }
         }
 
-        composable(Ruta.Inicio.ruta) {
+        composable(
+            route = Ruta.Inicio.ruta,
+            arguments = listOf(navArgument("rol") { type = NavType.StringType })
+        ) { entrada ->
+            val rol = entrada.arguments?.getString("rol") ?: "usuario"
             InicioScreen(
+                rol = rol,
                 onNavegarCompromisos = { navController.navigate(Ruta.Compromisos.ruta) },
                 onNavegarHistorial = { navController.navigate(Ruta.HistorialPagos.ruta) },
                 onNavegarFormulario = { navController.navigate(Ruta.Formulario.ruta) },
@@ -48,7 +53,7 @@ fun AppNavegacion() {
                 onNavegarEjecutivo = { navController.navigate(Ruta.EjecutivoResumen.ruta) },
                 onCerrarSesion = {
                     navController.navigate(Ruta.Login.ruta) {
-                        popUpTo(0) { inclusive = true }
+                        popUpTo(Ruta.Inicio.ruta) { inclusive = true }
                     }
                 }
             )
@@ -62,12 +67,9 @@ fun AppNavegacion() {
         }
 
         composable(Ruta.Configuraciones.ruta) {
-            ConfiguracionesScreen(
-                onVolver = { navController.navigateUp() }
-            )
+            ConfiguracionesScreen(onVolver = { navController.navigateUp() })
         }
 
-        // --- ROL USUARIO (R-01) ---
         composable(Ruta.Compromisos.ruta) {
             CompromisosScreen(
                 onVolver = { navController.navigateUp() },
@@ -80,7 +82,7 @@ fun AppNavegacion() {
             route = Ruta.DetalleCompromiso.ruta,
             arguments = listOf(navArgument("id") { type = NavType.LongType })
         ) { entrada ->
-            val id = entrada.arguments?.getLong("id") ?: 0L
+            val id = entrada.arguments?.getLong("id") ?: return@composable
             DetalleCompromisoScreen(
                 compromisoId = id,
                 onVolver = { navController.navigateUp() },
@@ -90,14 +92,18 @@ fun AppNavegacion() {
 
         composable(Ruta.HistorialPagos.ruta) {
             HistorialPagosScreen(
-                onVolver = { navController.navigateUp() }
+                onVolver = { navController.navigateUp() },
+                montoSolicitudReciente = ultimoMontoSolicitud,
+                conceptoSolicitudReciente = ultimoConceptoSolicitud
             )
         }
 
         composable(Ruta.Formulario.ruta) {
             FormularioScreen(
                 onVolver = { navController.navigateUp() },
-                onPagoExitoso = {
+                onSolicitudRegistrada = { monto, concepto ->
+                    ultimoMontoSolicitud = monto
+                    ultimoConceptoSolicitud = concepto
                     navController.navigate(Ruta.HistorialPagos.ruta) {
                         popUpTo(Ruta.Inicio.ruta)
                     }
@@ -105,7 +111,6 @@ fun AppNavegacion() {
             )
         }
 
-        // --- ROL AGENTE (R-02) ---
         composable(Ruta.AgenteReportes.ruta) {
             AgenteReportesScreen(
                 onVolver = { navController.navigateUp() },
@@ -114,12 +119,9 @@ fun AppNavegacion() {
         }
 
         composable(Ruta.AgenteRecomendaciones.ruta) {
-            AgenteRecomendacionesScreen(
-                onVolver = { navController.navigateUp() }
-            )
+            AgenteRecomendacionesScreen(onVolver = { navController.navigateUp() })
         }
 
-        // --- ROL EJECUTIVO (R-03) ---
         composable(Ruta.EjecutivoResumen.ruta) {
             EjecutivoResumenScreen(
                 onVolver = { navController.navigateUp() },
@@ -128,9 +130,7 @@ fun AppNavegacion() {
         }
 
         composable(Ruta.EjecutivoCartera.ruta) {
-            EjecutivoCarteraScreen(
-                onVolver = { navController.navigateUp() }
-            )
+            EjecutivoCarteraScreen(onVolver = { navController.navigateUp() })
         }
     }
 }

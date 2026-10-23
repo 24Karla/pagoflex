@@ -17,10 +17,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -34,44 +36,41 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.BotonSecundario
-import com.example.pagoflex.ui.components.CampoContrasena
 import com.example.pagoflex.ui.components.TarjetaSeccion
 import com.example.pagoflex.ui.theme.Dimens
 import com.example.pagoflex.ui.theme.PagoFlexTheme
+import com.example.pagoflex.viewmodel.FormularioViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormularioScreen(
     onVolver: () -> Unit = {},
-    onPagoExitoso: () -> Unit = {}
+    onSolicitudRegistrada: (String, String) -> Unit = { _, _ -> },
+    formularioViewModel: FormularioViewModel = viewModel()
 ) {
-    val context = LocalContext.current
-    var monto by remember { mutableStateOf("") }
-    var concepto by remember { mutableStateOf("") }
+    val uiState by formularioViewModel.uiState.collectAsStateWithLifecycle()
     var fotoBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var permisoCamaraDenegado by remember { mutableStateOf(false) }
 
-    // Launcher para capturar foto con la cámara (retorna un Bitmap en miniatura)
     val camaraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap ->
-        if (bitmap != null) {
-            fotoBitmap = bitmap
-        }
+        fotoBitmap = bitmap
+        formularioViewModel.onComprobanteAdjuntado(bitmap != null)
     }
-
-    // Launcher para solicitar el permiso de cámara
     val permisoCamaraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { esConcedido ->
-        if (esConcedido) {
-            camaraLauncher.launch()
-        }
+    ) { concedido ->
+        permisoCamaraDenegado = !concedido
+        if (concedido) camaraLauncher.launch()
     }
 
     Scaffold(
@@ -93,25 +92,29 @@ fun FormularioScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
         ) {
-            TarjetaSeccion(titulo = "Detalle de la Transacción") {
-                CampoContrasena(
-                    valor = monto,
-                    onValorCambiado = { monto = it },
-                    etiqueta = "Monto a pagar ($)",
-                    esVisibleInicial = true
+            TarjetaSeccion(titulo = "Detalle del pago") {
+                OutlinedTextField(
+                    value = uiState.monto,
+                    onValueChange = formularioViewModel::onMontoCambia,
+                    label = { Text("Monto a pagar (\$)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    isError = uiState.errorMonto != null,
+                    supportingText = { uiState.errorMonto?.let { Text(it) } },
+                    modifier = Modifier.fillMaxWidth()
                 )
-
-                Spacer(modifier = Modifier.height(Dimens.espacioChico))
-
-                CampoContrasena(
-                    valor = concepto,
-                    onValorCambiado = { concepto = it },
-                    etiqueta = "Concepto / Detalle",
-                    esVisibleInicial = true
+                OutlinedTextField(
+                    value = uiState.concepto,
+                    onValueChange = formularioViewModel::onConceptoCambia,
+                    label = { Text("Concepto / detalle") },
+                    singleLine = true,
+                    isError = uiState.errorConcepto != null,
+                    supportingText = { uiState.errorConcepto?.let { Text(it) } },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            TarjetaSeccion(titulo = "Comprobante de Pago") {
+            TarjetaSeccion(titulo = "Comprobante de pago") {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -120,7 +123,7 @@ fun FormularioScreen(
                     if (fotoBitmap != null) {
                         Image(
                             bitmap = fotoBitmap!!.asImageBitmap(),
-                            contentDescription = "Foto del Comprobante",
+                            contentDescription = "Foto del comprobante",
                             modifier = Modifier
                                 .size(180.dp)
                                 .clip(RoundedCornerShape(Dimens.radioTarjeta)),
@@ -128,22 +131,38 @@ fun FormularioScreen(
                         )
                     } else {
                         Text(
-                            text = "No se ha adjuntado ningún comprobante.",
+                            text = "Adjunta una foto si ya realizaste el pago.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-
                     BotonSecundario(
-                        texto = if (fotoBitmap == null) "Tomar Foto del Comprobante" else "Cambiar Foto",
-                        onClick = {
-                            permisoCamaraLauncher.launch(Manifest.permission.CAMERA)
-                        }
+                        texto = if (fotoBitmap == null) "Tomar foto del comprobante" else "Cambiar foto",
+                        onClick = { permisoCamaraLauncher.launch(Manifest.permission.CAMERA) }
                     )
+                    if (permisoCamaraDenegado) {
+                        Text(
+                            text = "Sin permiso de cámara. Puedes continuar sin adjuntar una foto.",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = "La app valida una solicitud de demostración; todavía no procesa cobros reales.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (uiState.solicitudRegistrada) {
+                TarjetaSeccion(titulo = "Solicitud lista") {
+                    Text("Monto: \$${uiState.monto}")
+                    Text("Concepto: ${uiState.concepto}")
+                    Text("Estado: ${uiState.estado.estado}")
+                }
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -151,15 +170,26 @@ fun FormularioScreen(
             ) {
                 BotonSecundario(
                     texto = "Cancelar",
-                    onClick = onVolver,
+                    onClick = {
+                        formularioViewModel.limpiar()
+                        fotoBitmap = null
+                        onVolver()
+                    },
                     modifier = Modifier.weight(1f)
                 )
                 BotonPrincipal(
-                    texto = "Confirmar",
-                    onClick = onPagoExitoso,
+                    texto = if (uiState.solicitudRegistrada) "Ver historial" else "Confirmar solicitud",
+                    onClick = {
+                        if (uiState.solicitudRegistrada) {
+                            onSolicitudRegistrada(uiState.monto, uiState.concepto)
+                        } else {
+                            formularioViewModel.registrarPago()
+                        }
+                    },
                     modifier = Modifier.weight(1f)
                 )
             }
+            Spacer(modifier = Modifier.height(Dimens.espacioChico))
         }
     }
 }
@@ -167,7 +197,5 @@ fun FormularioScreen(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun FormularioScreenPreview() {
-    PagoFlexTheme {
-        FormularioScreen()
-    }
+    PagoFlexTheme { FormularioScreen() }
 }

@@ -48,13 +48,13 @@ fun PerfilScreen(
             // Uso correcto de AvatarCircular con 'iniciales'
             AvatarCircular(iniciales = "PF")
 
-            Text(text = "Juan Pérez", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(text = "juan.perez@pagoflex.cl", style = MaterialTheme.typography.bodyMedium)
+            Text(text = "Jesús Gonzales", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(text = "jesus@pago.cl", style = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.height(Dimens.espacioMedio))
 
             TarjetaSeccion(titulo = "Información Personal") {
-                Text("RUT: 12.345.678-9")
+                Text("RUT: 11.111.111-1")
                 Text("Teléfono: +56 9 8765 4321")
                 Text("Dirección: Av. Siempreviva 123")
             }

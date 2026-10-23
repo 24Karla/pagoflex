@@ -1,4 +1,4 @@
-package com.example.pagoflex.ui.theme.theme.styles
+package com.example.pagoflex.ui.theme.styles
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -6,6 +6,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Shape
+import com.example.pagoflex.ui.theme.Dimens
 import com.example.pagoflex.ui.theme.theme.Dimens
 import com.example.pagoflex.ui.theme.theme.GrisDeshabilitado
 

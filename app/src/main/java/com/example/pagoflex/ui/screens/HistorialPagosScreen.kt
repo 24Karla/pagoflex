@@ -24,7 +24,9 @@ import com.example.pagoflex.ui.theme.PagoFlexTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistorialPagosScreen(
-    onVolver: () -> Unit = {}
+    onVolver: () -> Unit = {},
+    montoSolicitudReciente: String = "",
+    conceptoSolicitudReciente: String = ""
 ) {
     Scaffold(
         topBar = {
@@ -42,20 +44,24 @@ fun HistorialPagosScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
         ) {
-            TarjetaSeccion(titulo = "Pago Realizado - 01/10/2026") {
-                Text("Monto: $50.000")
+            if (montoSolicitudReciente.isNotBlank() && conceptoSolicitudReciente.isNotBlank()) {
+                TarjetaSeccion(titulo = "Solicitud reciente · En revisión") {
+                    Text("Monto: \$${montoSolicitudReciente}")
+                    Text("Concepto: $conceptoSolicitudReciente")
+                    Text("Guardada en esta sesión; no se procesó un cobro real.")
+                }
+            }
+            TarjetaSeccion(titulo = "Pago de ejemplo · 01/10/2026") {
+                Text("Monto: \$50.000")
                 Text("Método: Transferencia")
                 Text("Estado: Aprobado ✓")
             }
-
-            TarjetaSeccion(titulo = "Pago Realizado - 15/09/2026") {
-                Text("Monto: $32.000")
+            TarjetaSeccion(titulo = "Pago de ejemplo · 15/09/2026") {
+                Text("Monto: \$32.000")
                 Text("Método: Tarjeta Débito")
                 Text("Estado: Aprobado ✓")
             }
-
             Spacer(modifier = Modifier.weight(1f))
-
             BotonSecundario(texto = "Volver", onClick = onVolver)
         }
     }

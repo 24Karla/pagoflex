@@ -1,4 +1,4 @@
-package com.example.pagoflex.ui.theme.theme.styles
+package com.example.pagoflex.ui.theme.styles
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardColors
