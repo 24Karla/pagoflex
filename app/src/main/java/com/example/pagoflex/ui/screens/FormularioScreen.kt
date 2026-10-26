@@ -53,12 +53,13 @@ import com.example.pagoflex.viewmodel.FormularioViewModel
 @Composable
 fun FormularioScreen(
     onVolver: () -> Unit = {},
-    onSolicitudRegistrada: (String, String) -> Unit = { _, _ -> },
+    onSolicitudRegistrada: (String, String) -> Boolean = { _, _ -> false },
     formularioViewModel: FormularioViewModel = viewModel()
 ) {
     val uiState by formularioViewModel.uiState.collectAsStateWithLifecycle()
     var fotoBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var permisoCamaraDenegado by remember { mutableStateOf(false) }
+    var errorGuardar by remember { mutableStateOf(false) }
 
     val camaraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
@@ -151,7 +152,7 @@ fun FormularioScreen(
             }
 
             Text(
-                text = "La app valida una solicitud de demostración; todavía no procesa cobros reales.",
+                text = "La solicitud quedará registrada en tu historial para seguimiento.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -164,6 +165,13 @@ fun FormularioScreen(
                 }
             }
 
+            if (errorGuardar) {
+                Text(
+                    text = "No se pudo guardar la solicitud en esta cuenta. Inténtalo otra vez.",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
@@ -178,12 +186,16 @@ fun FormularioScreen(
                     modifier = Modifier.weight(1f)
                 )
                 BotonPrincipal(
-                    texto = if (uiState.solicitudRegistrada) "Ver historial" else "Confirmar solicitud",
+                    texto = "Confirmar y guardar",
                     onClick = {
-                        if (uiState.solicitudRegistrada) {
-                            onSolicitudRegistrada(uiState.monto, uiState.concepto)
-                        } else {
-                            formularioViewModel.registrarPago()
+                        errorGuardar = false
+                        if (formularioViewModel.registrarPago()) {
+                            val guardado = onSolicitudRegistrada(uiState.monto, uiState.concepto)
+                            errorGuardar = !guardado
+                            if (guardado) {
+                                formularioViewModel.limpiar()
+                                fotoBitmap = null
+                            }
                         }
                     },
                     modifier = Modifier.weight(1f)

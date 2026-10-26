@@ -2,6 +2,7 @@ package com.example.pagoflex.navigation
 
 sealed class Ruta(val ruta: String) {
     data object Login : Ruta("login")
+    data object Registro : Ruta("registro")
     data object Inicio : Ruta("inicio/{rol}"){
         fun crear(rol: String)="inicio/$rol"
     }
