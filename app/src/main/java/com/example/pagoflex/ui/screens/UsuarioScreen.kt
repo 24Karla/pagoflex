@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pagoflex.R
-import com.example.pagoflex.model.Rol
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.BotonSecundario
 import com.example.pagoflex.ui.components.CampoContrasena
@@ -41,12 +40,22 @@ import com.example.pagoflex.ui.components.TarjetaSeccion
 import com.example.pagoflex.ui.theme.Dimens
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 import com.example.pagoflex.viewmodel.UsuariosViewModel
+import android.app.Application
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelProvider
+import com.example.pagoflex.ui.theme.PreferenciasTema
 
 @Composable
 fun UsuarioScreen(
     onLoginExitoso: (String) -> Unit = {},
     onIrARegistro: (String) -> Unit = {},
-    usuariosViewModel: UsuariosViewModel = viewModel()
+    usuariosViewModel: UsuariosViewModel = run {
+        val context = LocalContext.current
+        val app = (context.applicationContext as? Application) ?: Application()
+        viewModel(
+            factory = ViewModelProvider.AndroidViewModelFactory.getInstance(app)
+        )
+    }
 ) {
     val state by usuariosViewModel.loginUiState.collectAsStateWithLifecycle()
 
@@ -65,8 +74,10 @@ fun UsuarioScreen(
             verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
         ) {
             Spacer(Modifier.height(Dimens.espacioMedio))
+
+            val logo = if (PreferenciasTema.modoOscuro) R.drawable.logo_inicio else R.drawable.logo_inicio
             Image(
-                painter = painterResource(R.drawable.logo_inicio),
+                painter = painterResource(logo),
                 contentDescription = "Logo de PagoFlex",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(250.dp)

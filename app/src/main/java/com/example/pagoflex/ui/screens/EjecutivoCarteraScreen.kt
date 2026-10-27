@@ -12,13 +12,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,17 +28,18 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.KeyboardType
 import com.example.pagoflex.model.Compromiso
 import com.example.pagoflex.model.Empresa
 import com.example.pagoflex.model.ResultadoOperacion
@@ -83,8 +84,10 @@ fun EjecutivoCarteraScreen(
     var detalleOtro by remember { mutableStateOf("") }
     var menuMotivoAbierto by remember { mutableStateOf(false) }
 
-    val formatoMonto = NumberFormat.getIntegerInstance(Locale("es", "CL"))
-    val formatoMes = SimpleDateFormat("MMMM yyyy", Locale("es", "CL"))
+    val formatoMonto = remember { NumberFormat.getIntegerInstance(Locale("es", "CL")) }
+    val formatoMes = remember { SimpleDateFormat("MMMM yyyy", Locale("es", "CL")) }
+    val formatoFecha = remember { SimpleDateFormat("d MMM yyyy", Locale("es", "CL")) }
+
     val meses = remember(registros) {
         registros.map { compromiso ->
             Calendar.getInstance().apply { timeInMillis = compromiso.vencimientoMillis }.let { cal ->
@@ -99,9 +102,9 @@ fun EjecutivoCarteraScreen(
         val pasaMes = mesSeleccionado == "Todos los meses" || "${cal.get(Calendar.YEAR)}-${(cal.get(Calendar.MONTH) + 1).toString().padStart(2, '0')}" == mesSeleccionado
         pasaEstado && pasaMes
     }
-    val formatoFecha = SimpleDateFormat("d MMM yyyy", Locale("es", "CL"))
 
     if (crearAbierto) {
+        val focusManager = LocalFocusManager.current
         AlertDialog(
             onDismissRequest = { crearAbierto = false },
             title = { Text("Registrar compromiso", fontWeight = FontWeight.Bold) },
@@ -125,15 +128,30 @@ fun EjecutivoCarteraScreen(
                         OutlinedTextField(cuotasTotales, { cuotasTotales = it.filter(Char::isDigit) }, label = { Text("Total cuotas") }, modifier = Modifier.weight(1f), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                     }
                     OutlinedTextField(monto, { monto = it.filter(Char::isDigit) }, label = { Text("Monto en CLP") }, modifier = Modifier.fillMaxWidth(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                    OutlinedTextField(
-                        value = vencimientoMillis?.let { formatoFecha.format(Date(it)) }.orEmpty(),
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Vencimiento") },
-                        placeholder = { Text("Selecciona una fecha") },
-                        modifier = Modifier.fillMaxWidth().clickable { selectorFechaAbierto = true },
-                        singleLine = true
-                    )
+
+                    Box(Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = vencimientoMillis?.let { formatoFecha.format(Date(it)) }.orEmpty(),
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Vencimiento") },
+                            trailingIcon = { Text("📅") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        Box(
+                            Modifier
+                                .matchParentSize()
+                                .clickable(onClickLabel = "Elegir fecha de vencimiento") {
+                                    focusManager.clearFocus()
+                                    selectorFechaAbierto = true
+                                }
+                        )
+                    }
+
+                    if (!mensaje.isNullOrBlank()) {
+                        Text(mensaje!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             },
             confirmButton = {
@@ -163,26 +181,36 @@ fun EjecutivoCarteraScreen(
     }
 
     if (selectorFechaAbierto) {
+        val anioActual = remember { Calendar.getInstance().get(Calendar.YEAR) }
+        val fechaInicialUtc = remember(vencimientoMillis) {
+            vencimientoMillis?.let(::fechaLocalMillisAFechaUtc) ?: fechaActualUtcMillis()
+        }
         val fechaPickerState = rememberDatePickerState(
-            initialSelectedDateMillis = vencimientoMillis?.let(::fechaLocalMillisAFechaUtc) ?: fechaActualUtcMillis()
+            initialSelectedDateMillis = fechaInicialUtc,
+            yearRange = (anioActual - 1)..(anioActual + 10)
         )
         DatePickerDialog(
             onDismissRequest = { selectorFechaAbierto = false },
             confirmButton = {
-                TextButton(onClick = {
-                    fechaPickerState.selectedDateMillis?.let { seleccion ->
-                        vencimientoMillis = fechaPickerUtcAMillisLocal(seleccion)
+                TextButton(
+                    enabled = fechaPickerState.selectedDateMillis != null,
+                    onClick = {
+                        fechaPickerState.selectedDateMillis?.let { seleccion ->
+                            vencimientoMillis = fechaPickerUtcAMillisLocal(seleccion)
+                            mensaje = null
+                        }
                         selectorFechaAbierto = false
                     }
-                }) { Text("Aceptar") }
+                ) { Text("Aceptar") }
             },
             dismissButton = {
                 TextButton(onClick = { selectorFechaAbierto = false }) { Text("Cancelar") }
             }
         ) {
-            DatePicker(state = fechaPickerState)
+            DatePicker(state = fechaPickerState, showModeToggle = false)
         }
     }
+
     compromisoAAnular?.let { compromiso ->
         AlertDialog(
             onDismissRequest = { compromisoAAnular = null },
@@ -278,7 +306,6 @@ fun EjecutivoCarteraScreen(
     }
 }
 
-
 private fun fechaActualUtcMillis(): Long {
     val hoy = Calendar.getInstance()
     return Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
@@ -303,6 +330,7 @@ private fun fechaLocalMillisAFechaUtc(millisLocal: Long): Long {
         set(fechaLocal.get(Calendar.YEAR), fechaLocal.get(Calendar.MONTH), fechaLocal.get(Calendar.DAY_OF_MONTH))
     }.timeInMillis
 }
+
 @Preview(showBackground = true)
 @Composable
 private fun EjecutivoCarteraScreenPreview() {

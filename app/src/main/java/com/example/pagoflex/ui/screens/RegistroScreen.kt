@@ -27,31 +27,33 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.pagoflex.model.Rol
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.CampoContrasena
 import com.example.pagoflex.ui.components.TarjetaSeccion
 import com.example.pagoflex.ui.theme.Dimens
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 import com.example.pagoflex.viewmodel.UsuariosViewModel
+import android.app.Application
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistroScreen(
     onVolver: () -> Unit = {},
     onRegistroExitoso: (String) -> Unit = {},
-    usuariosViewModel: UsuariosViewModel = viewModel()
+    usuariosViewModel: UsuariosViewModel = run {
+        val context = LocalContext.current
+        val app = (context.applicationContext as? Application) ?: Application()
+        viewModel(
+            factory = ViewModelProvider.AndroidViewModelFactory.getInstance(app)
+        )
+    }
 ) {
     val state by usuariosViewModel.registroUiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(state.registroExitoso) {
         if (state.registroExitoso) onRegistroExitoso(state.rolDestino)
-    }
-
-    val nombreRol = when (state.rolId) {
-        Rol.ID_AGENTE -> "Agente PagoFlex"
-        Rol.ID_EJECUTIVO -> "Ejecutivo de Empresa"
-        else -> "Usuario Final"
     }
 
     Scaffold(
@@ -141,15 +143,6 @@ fun RegistroScreen(
                 state.errorConfirmarContrasena?.let {
                     Text(it, color = MaterialTheme.colorScheme.error)
                 }
-            }
-
-            TarjetaSeccion(titulo = "Tipo de cuenta") {
-                Text(nombreRol, style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    "El tipo se define según la opción elegida en la pantalla anterior.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
 
             state.errorGeneral?.let {

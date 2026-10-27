@@ -34,6 +34,9 @@ import com.example.pagoflex.ui.components.TarjetaSeccion
 import com.example.pagoflex.ui.theme.Dimens
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 import com.example.pagoflex.viewmodel.UsuariosViewModel
+import android.app.Application
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,7 +44,13 @@ fun PerfilScreen(
     onVolver: () -> Unit = {},
     onIrConfiguraciones: () -> Unit = {},
     onCerrarSesion: () -> Unit = {},
-    usuariosViewModel: UsuariosViewModel = viewModel()
+    usuariosViewModel: UsuariosViewModel = run {
+        val context = LocalContext.current
+        val app = (context.applicationContext as? Application) ?: Application()
+        viewModel(
+            factory = ViewModelProvider.AndroidViewModelFactory.getInstance(app)
+        )
+    }
 ) {
     val usuario = remember { usuariosViewModel.obtenerUsuarioSesion() }
     val nombre = usuario?.nombre ?: "Cuenta no disponible"

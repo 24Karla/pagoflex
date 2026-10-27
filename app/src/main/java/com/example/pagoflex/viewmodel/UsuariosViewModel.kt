@@ -24,7 +24,7 @@ data class LoginUiState(
     val errorContrasena: String? = null,
     val errorGeneral: String? = null,
     val loginExitoso: Boolean = false,
-    val rolSeleccionado: String? = null,
+    val rolSeleccionado: String? = "usuario",
     val rolDestino: String = "usuario",
     val usuarioLogueado: Usuario? = null
 )

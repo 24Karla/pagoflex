@@ -36,7 +36,14 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy {
+        force("androidx.annotation:annotation-experimental:1.4.1")
+    }
+}
+
 dependencies {
+    implementation(libs.androidx.annotation.experimental)
     implementation("androidx.navigation:navigation-compose:2.9.6")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

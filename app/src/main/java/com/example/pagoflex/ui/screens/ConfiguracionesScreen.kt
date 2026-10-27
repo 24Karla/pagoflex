@@ -37,6 +37,7 @@ import com.example.pagoflex.ui.components.ControlesSeleccion
 import com.example.pagoflex.ui.components.TarjetaSeccion
 import com.example.pagoflex.ui.theme.Dimens
 import com.example.pagoflex.ui.theme.PagoFlexTheme
+import com.example.pagoflex.ui.theme.PreferenciasTema
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +47,6 @@ fun ConfiguracionesScreen(
     val context = LocalContext.current
     var notificaciones by remember { mutableStateOf(PreferenciasAvisos.activas(context)) }
     var diasAviso by remember { mutableStateOf(PreferenciasAvisos.diasAntes(context)) }
-    var modoOscuro by remember { mutableStateOf(false) }
     var mensajeAvisos by remember { mutableStateOf<String?>(null) }
 
     val permisoNotificaciones = rememberLauncherForActivityResult(
@@ -131,8 +131,8 @@ fun ConfiguracionesScreen(
                 mensajeAvisos?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 ControlesSeleccion(
                     etiqueta = "Modo Oscuro",
-                    seleccionado = modoOscuro,
-                    onSelecciónCambiada = { modoOscuro = it }
+                    seleccionado = PreferenciasTema.modoOscuro,
+                    onSelecciónCambiada = { PreferenciasTema.cambiar(context, it) }
                 )
             }
 

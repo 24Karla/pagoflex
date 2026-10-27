@@ -29,10 +29,19 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import com.example.pagoflex.viewmodel.UsuariosViewModel
+import android.app.Application
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelProvider
 
 @Composable
 fun AppNavegacion(
-    usuariosViewModel: UsuariosViewModel = viewModel()
+    usuariosViewModel: UsuariosViewModel = run {
+        val context = LocalContext.current
+        val app = (context.applicationContext as? Application) ?: Application()
+        viewModel(
+            factory = ViewModelProvider.AndroidViewModelFactory.getInstance(app)
+        )
+    }
 ) {
     val navController = rememberNavController()
     val usuarioSesionInicial = remember { usuariosViewModel.comprobarSesionActiva() }
