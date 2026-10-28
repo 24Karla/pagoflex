@@ -1,5 +1,7 @@
 package com.example.pagoflex.viewmodel
 
+import com.example.pagoflex.data.GestorFotos
+import com.example.pagoflex.model.ResultadoOperacion
 import android.app.Application
 import android.util.Patterns
 import androidx.lifecycle.AndroidViewModel
@@ -353,6 +355,27 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
         return (dbHelper?.guardarSolicitudPago(userId, monto, concepto) ?: -1L) > 0L
     }
 
+    fun crearReporte(compromisoId: Long?, tipo: String, descripcion: String, foto: java.io.File?): ResultadoOperacion {
+        val userId = sesionPrefs?.leer() ?: return ResultadoOperacion(false, "Inicia sesión para enviar un reporte.")
+        if (userId <= 0L) return ResultadoOperacion(false, "Inicia sesión para enviar un reporte.")
+        val db = dbHelper ?: return ResultadoOperacion(false, "No se pudo abrir la base de datos.")
+
+        val (reporteId, mensaje) = db.crearReporteDeUsuario(userId, compromisoId, tipo, descripcion)
+        if (reporteId <= 0L) return ResultadoOperacion(false, mensaje)
+
+        var textoFinal = "Reporte enviado. Un agente lo revisará pronto."
+        if (foto != null && foto.exists()) {
+            val adjuntada = try {
+                foto.copyTo(GestorFotos.archivoReporte(getApplication(), reporteId), overwrite = true)
+                true
+            } catch (e: Exception) {
+                false
+            }
+            foto.delete()
+            if (!adjuntada) textoFinal = "Reporte enviado, pero no se pudo adjuntar la foto."
+        }
+        return ResultadoOperacion(true, textoFinal)
+    }
     fun obtenerResumenCumplimiento(userId: Long): com.example.pagoflex.model.ResumenCumplimiento =
         dbHelper?.obtenerResumenCumplimiento(userId) ?: com.example.pagoflex.model.ResumenCumplimiento(0, 0, 0.0, "Historial insuficiente")
 

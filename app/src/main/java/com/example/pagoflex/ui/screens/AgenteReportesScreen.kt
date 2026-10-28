@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.example.pagoflex.model.ReporteIncidencia
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.BotonSecundario
+import com.example.pagoflex.ui.components.FotoReporte
 import com.example.pagoflex.ui.components.TarjetaSeccion
 import com.example.pagoflex.ui.theme.Dimens
 import com.example.pagoflex.ui.theme.PagoFlexTheme
@@ -54,7 +55,7 @@ fun AgenteReportesScreen(
     onActualizarReporte: (Long, String, String?) -> Boolean = { _, _, _ -> false },
     onVolver: () -> Unit = {},
     onVerRecomendaciones: () -> Unit = {},
-    onVerPerfil: () -> Unit = {}
+    onVerPerfil: () -> Unit = {},
 ) {
     var listaReportes by remember(userId) { mutableStateOf(reportes) }
     var filtro by remember { mutableStateOf("Todos") }
@@ -104,6 +105,10 @@ fun AgenteReportesScreen(
                     caso.compromisoId?.let { Text("Compromiso relacionado: #$it") }
                     Text("Recibido: ${fecha.format(Date(caso.fechaCreacionMillis))}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(caso.descripcion, color = MaterialTheme.colorScheme.onSurface)
+
+                    // Foto adjunta al reporte dentro del detalle
+                    FotoReporte(reporteId = caso.id)
+
                     if (caso.agenteAsignadoId != null && caso.agenteAsignadoId != userId) {
                         Text("Este caso está en seguimiento por otro agente.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else if (caso.estado == "Abierto") {
@@ -170,6 +175,10 @@ fun AgenteReportesScreen(
                     ) {
                         Text(reporte.tipo, fontWeight = FontWeight.SemiBold)
                         Text("${reporte.estado} · ${fecha.format(Date(reporte.fechaCreacionMillis))}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                        // Foto adjunta al reporte en la tarjeta de la lista
+                        FotoReporte(reporteId = reporte.id)
+
                         if (reporte.agenteAsignadoId != null && reporte.agenteAsignadoId != userId) Text("Asignado a otro agente", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         if (diasAbierto > 2) Text("Prioridad: abierto hace $diasAbierto días hábiles", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
                         else Text("Toca para revisar el caso", color = MaterialTheme.colorScheme.primary)

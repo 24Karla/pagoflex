@@ -1,5 +1,6 @@
 package com.example.pagoflex.ui.screens
 
+import com.example.pagoflex.ui.components.BotonSecundario
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -51,7 +52,8 @@ fun InicioScreen(
     onNavegarPerfil: () -> Unit = {},
     onNavegarAgente: () -> Unit = {},
     onNavegarRecomendaciones: () -> Unit = {},
-    onNavegarEjecutivo: () -> Unit = {}
+    onNavegarEjecutivo: () -> Unit = {},
+    onNavegarReportar: () -> Unit = {}
 ) {
     val saludoNombre = nombreUsuario.ifBlank { "Usuario" }
     val formato = NumberFormat.getIntegerInstance(Locale("es", "CL"))
@@ -122,6 +124,7 @@ fun InicioScreen(
                     }
                     if (reconocimientos.isNotEmpty()) TarjetaSeccion(titulo = "Reconocimientos") { reconocimientos.forEach { Text("• $it") } }
                     BotonPrincipal(texto = "Historial de Pagos", onClick = onNavegarHistorial)
+                    BotonSecundario(texto = "Reportar un problema", onClick = onNavegarReportar)
                 }
             }
         }

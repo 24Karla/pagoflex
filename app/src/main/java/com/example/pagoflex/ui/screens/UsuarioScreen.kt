@@ -75,7 +75,7 @@ fun UsuarioScreen(
         ) {
             Spacer(Modifier.height(Dimens.espacioMedio))
 
-            val logo = if (PreferenciasTema.modoOscuro) R.drawable.logo_inicio else R.drawable.logo_inicio
+            val logo = if (PreferenciasTema.modoOscuro) R.drawable.logo_inicio_oscuro else R.drawable.logo_inicio
             Image(
                 painter = painterResource(logo),
                 contentDescription = "Logo de PagoFlex",

@@ -1199,6 +1199,61 @@ class UsuarioDbHelper(context: Context) :
             }
         }
     }
+
+    fun crearReporteDeUsuario(usuarioId: Long, compromisoId: Long?, tipo: String, descripcion: String): Pair<Long, String> {
+        val tiposPermitidos = setOf("Monto incorrecto", "Ya pagué", "No reconozco este cobro", "Otro")
+        val tipoLimpio = tipo.trim()
+        val texto = descripcion.trim()
+        if (usuarioId <= 0L || buscarPorId(usuarioId)?.rolId != Rol.ID_USUARIO) return -1L to "Solo un Usuario Final puede enviar reportes."
+        if (tipoLimpio !in tiposPermitidos) return -1L to "Selecciona el tipo de problema."
+        if (texto.length < 10) return -1L to "Describe el problema con al menos 10 caracteres."
+        if (texto.length > 500) return -1L to "La descripción no puede superar los 500 caracteres."
+
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            var empresaId: Long? = null
+            var cuentaDemoId: Long? = null
+            var esDemo = false
+            if (compromisoId != null) {
+                val compromiso = buscarCompromisoEnBase(db, usuarioId, compromisoId)
+                    ?: return -1L to "El compromiso seleccionado no pertenece a tu cuenta."
+                empresaId = compromiso.empresaId
+                cuentaDemoId = compromiso.cuentaDemoId
+                esDemo = compromiso.esDemo
+            }
+            val ahora = System.currentTimeMillis()
+            val id = db.insertOrThrow(TABLA_REPORTES, null, ContentValues().apply {
+                put(REPORTE_USUARIO_ID, usuarioId)
+                compromisoId?.let { put(REPORTE_COMPROMISO_ID, it) }
+                empresaId?.let { put(REPORTE_EMPRESA_ID, it) }
+                put(REPORTE_TIPO, tipoLimpio)
+                put(REPORTE_DESCRIPCION, texto)
+                put(REPORTE_ESTADO, "Abierto")
+                put(REPORTE_CREADO, ahora)
+                put(REPORTE_ACTUALIZADO, ahora)
+                cuentaDemoId?.let { put(REPORTE_CUENTA_DEMO_ID, it) }
+                put(REPORTE_ES_DEMO, if (esDemo) 1 else 0)
+            })
+            db.insertOrThrow(TABLA_AUDITORIA, null, ContentValues().apply {
+                put(AUDITORIA_ACTOR_ID, usuarioId)
+                put(AUDITORIA_ENTIDAD, "reporte")
+                put(AUDITORIA_ENTIDAD_ID, id)
+                put(AUDITORIA_ACCION, "REPORTE_CREADO")
+                put(AUDITORIA_DETALLE, "Reporte '$tipoLimpio' enviado por el usuario")
+                put(AUDITORIA_FECHA, ahora)
+                cuentaDemoId?.let { put(AUDITORIA_CUENTA_DEMO_ID, it) }
+                put(AUDITORIA_ES_DEMO, if (esDemo) 1 else 0)
+            })
+            db.setTransactionSuccessful()
+            return id to "Reporte enviado."
+        } catch (e: Exception) {
+            return -1L to "No se pudo enviar el reporte. Intenta nuevamente."
+        } finally {
+            db.endTransaction()
+        }
+    }
+
     fun listarRoles(): List<Rol> {
         val roles = mutableListOf<Rol>()
         readableDatabase.rawQuery(

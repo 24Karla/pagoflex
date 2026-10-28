@@ -1,5 +1,8 @@
 package com.example.pagoflex.navigation
 
+import com.example.pagoflex.data.GestorFotos
+import com.example.pagoflex.ui.screens.RUTA_REPORTAR_PROBLEMA
+import com.example.pagoflex.ui.screens.ReportarProblemaScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
@@ -44,6 +47,7 @@ fun AppNavegacion(
     }
 ) {
     val navController = rememberNavController()
+    val contexto = LocalContext.current
     val usuarioSesionInicial = remember { usuariosViewModel.comprobarSesionActiva() }
     val destinoInicial = if (usuarioSesionInicial != null) {
         if (usuarioSesionInicial.rolId == Rol.ID_EJECUTIVO) Ruta.EjecutivoResumen.ruta else Ruta.Inicio.crear(Rol.rolIdARutaString(usuarioSesionInicial.rolId))
@@ -120,7 +124,24 @@ fun AppNavegacion(
                 onNavegarPerfil = { navController.navigate(Ruta.Perfil.ruta) },
                 onNavegarAgente = { navController.navigate(Ruta.AgenteReportes.ruta) },
                 onNavegarRecomendaciones = { navController.navigate(Ruta.AgenteRecomendaciones.ruta) },
-                onNavegarEjecutivo = { navController.navigate(Ruta.EjecutivoResumen.ruta) }
+                onNavegarEjecutivo = { navController.navigate(Ruta.EjecutivoResumen.ruta) },
+                onNavegarReportar = {
+                    usuarioActual?.let { GestorFotos.archivoBorradorReporte(contexto, it.id).delete() }
+                    navController.navigate(RUTA_REPORTAR_PROBLEMA)
+                }
+            )
+        }
+
+        composable(RUTA_REPORTAR_PROBLEMA) {
+            val usuario = usuariosViewModel.obtenerUsuarioSesion()
+            val compromisos = usuario?.let { usuariosViewModel.listarCompromisosDeUsuario(it.id) }.orEmpty()
+            ReportarProblemaScreen(
+                borrador = GestorFotos.archivoBorradorReporte(contexto, usuario?.id ?: 0L),
+                compromisos = compromisos,
+                onEnviar = { compromisoId, tipo, descripcion, foto ->
+                    usuariosViewModel.crearReporte(compromisoId, tipo, descripcion, foto)
+                },
+                onVolver = { navController.navigateUp() }
             )
         }
 

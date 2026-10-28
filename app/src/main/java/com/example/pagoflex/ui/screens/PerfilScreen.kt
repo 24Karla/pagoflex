@@ -27,10 +27,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.pagoflex.ui.components.AvatarCircular
+import com.example.pagoflex.data.GestorFotos
+import com.example.pagoflex.ui.components.AvatarConFoto
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.BotonSecundario
 import com.example.pagoflex.ui.components.TarjetaSeccion
+import com.example.pagoflex.ui.components.rememberSelectorFoto
 import com.example.pagoflex.ui.theme.Dimens
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 import com.example.pagoflex.viewmodel.UsuariosViewModel
@@ -52,6 +54,7 @@ fun PerfilScreen(
         )
     }
 ) {
+    val context = LocalContext.current
     val usuario = remember { usuariosViewModel.obtenerUsuarioSesion() }
     val nombre = usuario?.nombre ?: "Cuenta no disponible"
     val correo = usuario?.cuenta ?: "—"
@@ -66,6 +69,39 @@ fun PerfilScreen(
         .take(2)
         .joinToString("")
         .ifEmpty { "PF" }
+
+    // Foto de perfil
+    val usuarioId = usuario?.id ?: -1L
+    val archivoFoto = remember(usuarioId) { GestorFotos.archivoPerfil(context, usuarioId) }
+    var versionFoto by remember { mutableStateOf(0) }
+    var opcionesFoto by remember { mutableStateOf(false) }
+    var mensajeFoto by remember { mutableStateOf<String?>(null) }
+    val selector = rememberSelectorFoto(destino = archivoFoto) { exito, error ->
+        if (exito) {
+            versionFoto++
+            mensajeFoto = null
+        } else {
+            mensajeFoto = error
+        }
+    }
+    val tieneFoto = remember(versionFoto, usuarioId) { archivoFoto.exists() }
+
+    if (opcionesFoto) {
+        AlertDialog(
+            onDismissRequest = { opcionesFoto = false },
+            title = { Text("Foto de perfil") },
+            text = {
+                Column {
+                    TextButton(onClick = { opcionesFoto = false; selector.tomarFoto() }) { Text("Tomar foto") }
+                    TextButton(onClick = { opcionesFoto = false; selector.elegirDeGaleria() }) { Text("Elegir de la galería") }
+                    if (tieneFoto) {
+                        TextButton(onClick = { opcionesFoto = false; archivoFoto.delete(); versionFoto++ }) { Text("Quitar foto") }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { opcionesFoto = false }) { Text("Cancelar") } }
+        )
+    }
 
     if (editarRut) {
         AlertDialog(
@@ -106,7 +142,16 @@ fun PerfilScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
         ) {
-            AvatarCircular(iniciales = iniciales)
+            AvatarConFoto(
+                iniciales = iniciales,
+                archivo = archivoFoto,
+                version = versionFoto,
+                onClick = { if (usuario != null) opcionesFoto = true }
+            )
+            TextButton(onClick = { opcionesFoto = true }, enabled = usuario != null) {
+                Text(if (tieneFoto) "Cambiar foto" else "Añadir foto")
+            }
+            mensajeFoto?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Text(text = nombre, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(text = correo, style = MaterialTheme.typography.bodyMedium)
             TarjetaSeccion(titulo = "Información Personal") {
