@@ -63,6 +63,10 @@ fun PerfilScreen(
     var editarRut by remember { mutableStateOf(false) }
     var rutIngresado by remember { mutableStateOf("") }
     var errorRut by remember { mutableStateOf<String?>(null) }
+    var cambiarClave by remember { mutableStateOf(false) }
+    var claveActual by remember { mutableStateOf("") }
+    var claveNueva by remember { mutableStateOf("") }
+    var mensajeClave by remember { mutableStateOf<String?>(null) }
     val rutEnmascarado = rutActual.takeIf { it.length >= 4 }?.let { "${it.take(2)}.*.*-${it.last()}" } ?: "No registrado"
     val iniciales = nombre.split(" ")
         .mapNotNull { it.firstOrNull()?.toString() }
@@ -133,6 +137,34 @@ fun PerfilScreen(
             dismissButton = { TextButton(onClick = { editarRut = false; errorRut = null }) { Text("Cancelar") } }
         )
     }
+    if (cambiarClave) {
+        AlertDialog(
+            onDismissRequest = { cambiarClave = false },
+            title = { Text("Cambiar contraseña") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
+                    com.example.pagoflex.ui.components.CampoContrasena(
+                        valor = claveActual,
+                        onValorCambiado = { claveActual = it },
+                        etiqueta = "Contraseña actual"
+                    )
+                    com.example.pagoflex.ui.components.CampoContrasena(
+                        valor = claveNueva,
+                        onValorCambiado = { claveNueva = it },
+                        etiqueta = "Nueva contraseña"
+                    )
+                    Text("Mínimo 8 caracteres, mayúscula, minúscula, número y carácter especial.")
+                    mensajeClave?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                }
+            },
+            confirmButton = { TextButton(onClick = {
+                val resultado = usuariosViewModel.cambiarContrasena(claveActual, claveNueva)
+                mensajeClave = resultado.mensaje
+                if (resultado.exitoso) cambiarClave = false
+            }) { Text("Actualizar") } },
+            dismissButton = { TextButton(onClick = { cambiarClave = false }) { Text("Cancelar") } }
+        )
+    }
     Scaffold(
         topBar = { CenterAlignedTopAppBar(title = { Text("Mi Perfil", fontWeight = FontWeight.Bold) }) },
         containerColor = MaterialTheme.colorScheme.background
@@ -165,6 +197,7 @@ fun PerfilScreen(
             }
             Spacer(modifier = Modifier.height(Dimens.espacioChico))
             BotonPrincipal(texto = "Configuraciones", onClick = onIrConfiguraciones)
+            BotonSecundario(texto = "Cambiar contraseña", onClick = { claveActual = ""; claveNueva = ""; mensajeClave = null; cambiarClave = true })
             BotonSecundario(texto = "Cerrar sesión", onClick = onCerrarSesion)
             BotonSecundario(texto = "Volver", onClick = onVolver)
         }

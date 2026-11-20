@@ -1375,6 +1375,14 @@ class UsuarioDbHelper(context: Context) :
     fun actualizarUsuario(usuario: Usuario): Int =
         writableDatabase.update(TABLA_USUARIOS, valoresDe(usuario), "$USU_ID = ?", arrayOf(usuario.id.toString()))
 
+    fun actualizarContrasena(usuarioId: Long, nueva: String): Boolean {
+        val (hash, salt) = protegerContrasena(nueva)
+        return writableDatabase.update(TABLA_USUARIOS, ContentValues().apply {
+            put(USU_CONTRASENA, hash)
+            put(USU_SALT, salt)
+        }, "$USU_ID = ?", arrayOf(usuarioId.toString())) == 1
+    }
+
     fun eliminarUsuario(id: Long): Int =
         writableDatabase.delete(TABLA_USUARIOS, "$USU_ID = ?", arrayOf(id.toString()))
 

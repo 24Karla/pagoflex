@@ -81,6 +81,25 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
         return dbHelper?.actualizarRutUsuario(usuarioId, rut)
             ?: com.example.pagoflex.model.ResultadoOperacion(false, "No se pudo abrir la base de datos.")
     }
+
+    fun cambiarContrasena(actual: String, nueva: String): ResultadoOperacion {
+        val usuario = obtenerUsuarioSesion() ?: return ResultadoOperacion(false, "Inicia sesión para cambiar tu contraseña.")
+        if (dbHelper?.validarLogin(usuario.cuenta, actual, usuario.rolId) == null) return ResultadoOperacion(false, "La contraseña actual es incorrecta.")
+        if (!contrasenaCumpleRequisitos(nueva)) return ResultadoOperacion(false, "La contraseña debe tener mínimo 8 caracteres, mayúscula, minúscula, número y carácter especial.")
+        return if (dbHelper?.actualizarContrasena(usuario.id, nueva) == true) ResultadoOperacion(true, "Contraseña actualizada.") else ResultadoOperacion(false, "No se pudo actualizar la contraseña.")
+    }
+
+    fun recuperarContrasena(correo: String, rutIngresado: String, nueva: String): ResultadoOperacion {
+        val correoValido = correo.trim().lowercase()
+        val rut = normalizarRutChile(rutIngresado)
+        if (!Patterns.EMAIL_ADDRESS.matcher(correoValido).matches() || rut == null || !contrasenaCumpleRequisitos(nueva)) {
+            return ResultadoOperacion(false, "No se pudo completar la recuperación. Revisa los datos y requisitos de la contraseña.")
+        }
+        val db = dbHelper ?: return ResultadoOperacion(false, "No se pudo completar la recuperación. Revisa los datos y requisitos de la contraseña.")
+        val usuario = db.buscarPorCuenta(correoValido)
+        if (usuario == null || usuario.rut != rut) return ResultadoOperacion(false, "No se pudo completar la recuperación. Revisa los datos y requisitos de la contraseña.")
+        return if (db.actualizarContrasena(usuario.id, nueva)) ResultadoOperacion(true, "Contraseña actualizada. Ya puedes iniciar sesión.") else ResultadoOperacion(false, "No se pudo completar la recuperación. Revisa los datos y requisitos de la contraseña.")
+    }
     fun marcarConsultaDatosLocales(): Long = sesionPrefs?.marcarConsultaLocal() ?: System.currentTimeMillis()
 
     fun comprobarSesionActiva(): Usuario? {
@@ -164,25 +183,9 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
             _loginUiState.value = estado.copy(errorGeneral = "No se pudo abrir la base local de cuentas.")
             return false
         }
-        val cuentaEncontrada = db.buscarPorCuenta(cuenta)
-        if (cuentaEncontrada == null) {
-            _loginUiState.value = estado.copy(errorGeneral = "No existe una cuenta registrada con ese correo en este dispositivo.")
-            return false
-        }
-        if (cuentaEncontrada.rolId != Rol.rutaStringARolId(rolSeleccionado)) {
-            val rolRegistrado = Rol.rolIdARutaString(cuentaEncontrada.rolId)
-            val nombreRol = when (rolRegistrado) {
-                "agente" -> "Agente PagoFlex"
-                "ejecutivo" -> "Ejecutivo de Empresa"
-                else -> "Usuario Final"
-            }
-            _loginUiState.value = estado.copy(errorGeneral = "Esta cuenta está registrada como $nombreRol. Selecciona ese tipo de usuario.")
-            return false
-        }
-
-        val usuario = db.validarLogin(cuenta, contrasena, cuentaEncontrada.rolId)
+        val usuario = db.validarLogin(cuenta, contrasena, Rol.rutaStringARolId(rolSeleccionado))
         if (usuario == null) {
-            _loginUiState.value = estado.copy(errorGeneral = "La contraseña no coincide con esta cuenta.")
+            _loginUiState.value = estado.copy(errorGeneral = "Correo o contraseña incorrectos")
             return false
         }
 
@@ -235,17 +238,25 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
         val contrasena = state.contrasena.trim()
         val confirmar = state.confirmarContrasena.trim()
 
-        val errNombre = if (nombre.isBlank()) "El nombre es obligatorio" else null
+        val errNombre = when {
+            nombre.isBlank() -> "El nombre es obligatorio"
+            !nombre.matches(Regex("[\\p{L}]+(?: [\\p{L}]+)*")) -> "Usa solo letras y espacios en el nombre"
+            else -> null
+        }
         val errCuenta = when {
             cuenta.isBlank() -> "El correo es obligatorio"
             !Patterns.EMAIL_ADDRESS.matcher(cuenta).matches() -> "Ingresa un correo válido"
             else -> null
         }
-        val errCiudad = if (ciudad.isBlank()) "La ciudad es obligatoria" else null
+        val errCiudad = when {
+            ciudad.isBlank() -> "La ciudad es obligatoria"
+            !ciudad.matches(Regex("[\\p{L}]+(?:[ '-][\\p{L}]+)*")) -> "Ingresa una ciudad válida usando solo letras"
+            else -> null
+        }
         val errRut = if (rut == null) "Ingresa un RUT chileno válido (módulo 11)." else null
         val errContrasena = when {
             contrasena.isBlank() -> "Ingresa una contraseña"
-            contrasena.length < 4 -> "La contraseña debe tener al menos 4 caracteres"
+            !contrasenaCumpleRequisitos(contrasena) -> "La contraseña debe tener mínimo 8 caracteres, mayúscula, minúscula, número y carácter especial"
             else -> null
         }
         val errConfirmar = if (confirmar != contrasena) "Las contraseñas no coinciden" else null
@@ -411,3 +422,7 @@ private fun normalizarRutChile(valor: String): String? {
     val esperado = when (resto) { 11 -> '0'; 10 -> 'K'; else -> ('0'.code + resto).toChar() }
     return if (digitoIngresado == esperado) "$cuerpo-$esperado" else null
 }
+
+private fun contrasenaCumpleRequisitos(valor: String): Boolean =
+    valor.length >= 8 && valor.any(Char::isUpperCase) && valor.any(Char::isLowerCase) &&
+        valor.any(Char::isDigit) && valor.any { !it.isLetterOrDigit() }
