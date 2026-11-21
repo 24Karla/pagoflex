@@ -4,14 +4,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +35,15 @@ fun PerfilScreen(
     onVolver: () -> Unit = {},
     onIrConfiguraciones: () -> Unit = {}
 ) {
+    var nombreEditable by remember { mutableStateOf("Juan Pérez") }
+    var comunaEditable by remember { mutableStateOf("Santiago") }
+    var mensaje by remember { mutableStateOf("") }
+
+    // Immutable / blocked fields based on role: ID interno, RUT, rol
+    val idInterno = "ID-99482"
+    val rutBloqueado = "12.345.678-9"
+    val rolBloqueado = "Usuario final"
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -45,23 +60,45 @@ fun PerfilScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
         ) {
-            // Uso correcto de AvatarCircular con 'iniciales'
-            AvatarCircular(iniciales = "PF")
+            AvatarCircular(iniciales = "JP")
 
-            Text(text = "Juan Pérez", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(text = nombreEditable, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(text = "juan.perez@pagoflex.cl", style = MaterialTheme.typography.bodyMedium)
 
-            Spacer(modifier = Modifier.height(Dimens.espacioMedio))
+            Spacer(modifier = Modifier.height(Dimens.espacioChico))
 
-            TarjetaSeccion(titulo = "Información Personal") {
-                Text("RUT: 12.345.678-9")
-                Text("Teléfono: +56 9 8765 4321")
-                Text("Dirección: Av. Siempreviva 123")
+            OutlinedTextField(
+                value = nombreEditable,
+                onValueChange = { if (it.all { char -> char.isLetter() || char.isWhitespace() }) nombreEditable = it },
+                label = { Text("Nombre (Editable)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = comunaEditable,
+                onValueChange = { comunaEditable = it },
+                label = { Text("Comuna (Editable)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Blocked / hidden info according to role
+            TarjetaSeccion(titulo = "Información Protegida (Bloqueada)") {
+                Text("ID Interno: $idInterno (No modificable)")
+                Text("RUT: $rutBloqueado (No modificable)")
+                Text("Rol: $rolBloqueado (No modificable)")
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            if (mensaje.isNotEmpty()) {
+                Text(mensaje, color = MaterialTheme.colorScheme.primary)
+            }
 
-            BotonPrincipal(texto = "Configuraciones", onClick = onIrConfiguraciones)
+            Spacer(modifier = Modifier.height(Dimens.espacioChico))
+
+            BotonPrincipal(
+                texto = "Guardar Cambios",
+                onClick = { mensaje = "Perfil actualizado correctamente." }
+            )
+
             BotonSecundario(texto = "Volver", onClick = onVolver)
         }
     }
