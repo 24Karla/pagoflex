@@ -38,7 +38,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pagoflex.R
 import com.example.pagoflex.ui.components.BotonPrincipal
-import com.example.pagoflex.ui.components.BotonSecundario
 import com.example.pagoflex.ui.components.CampoContrasena
 import com.example.pagoflex.ui.components.TarjetaSeccion
 import com.example.pagoflex.ui.theme.Dimens
@@ -113,67 +112,54 @@ fun UsuarioScreen(
                 painter = painterResource(logo),
                 contentDescription = "Logo de PagoFlex",
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.size(250.dp)
+                modifier = Modifier.size(220.dp)
             )
             Text(
-                text = "¿Cómo quieres ingresar hoy?",
-                style = MaterialTheme.typography.titleMedium,
+                text = "Iniciar Sesión",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurface
             )
 
-            BotonSecundario(
-                texto = "Soy Usuario Final",
-                onClick = { usuariosViewModel.seleccionarRol("usuario") }
-            )
-            BotonSecundario(
-                texto = "Soy Agente PagoFlex",
-                onClick = { usuariosViewModel.seleccionarRol("agente") }
-            )
-            BotonSecundario(
-                texto = "Soy Ejecutivo de Empresa",
-                onClick = { usuariosViewModel.seleccionarRol("ejecutivo") }
-            )
+            Spacer(Modifier.height(Dimens.espacioChico))
 
-            state.rolSeleccionado?.let { rol ->
+            TarjetaSeccion(titulo = "Credenciales de Acceso") {
+                OutlinedTextField(
+                    value = state.cuenta,
+                    onValueChange = usuariosViewModel::onLoginCuentaCambia,
+                    label = { Text("Correo electrónico") },
+                    placeholder = { Text("nombre@correo.com") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    isError = state.errorCuenta != null,
+                    supportingText = { state.errorCuenta?.let { Text(it) } },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                CampoContrasena(
+                    valor = state.contrasena,
+                    onValorCambiado = usuariosViewModel::onLoginContrasenaCambia,
+                    etiqueta = "Contraseña"
+                )
+                state.errorContrasena?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error)
+                }
+                state.errorGeneral?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                }
                 Spacer(Modifier.height(Dimens.espacioChico))
-                TarjetaSeccion(titulo = "Ingresar como ${rol.replaceFirstChar { it.uppercase() }}") {
-                    OutlinedTextField(
-                        value = state.cuenta,
-                        onValueChange = usuariosViewModel::onLoginCuentaCambia,
-                        label = { Text("Correo electrónico") },
-                        placeholder = { Text("nombre@correo.com") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Next
-                        ),
-                        isError = state.errorCuenta != null,
-                        supportingText = { state.errorCuenta?.let { Text(it) } },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    CampoContrasena(
-                        valor = state.contrasena,
-                        onValorCambiado = usuariosViewModel::onLoginContrasenaCambia,
-                        etiqueta = "Contraseña"
-                    )
-                    state.errorContrasena?.let {
-                        Text(it, color = MaterialTheme.colorScheme.error)
-                    }
-                    state.errorGeneral?.let {
-                        Text(it, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(Modifier.height(Dimens.espacioChico))
-                    BotonPrincipal(
-                        texto = "Iniciar sesión",
-                        onClick = { usuariosViewModel.iniciarSesion() }
-                    )
-                    TextButton(onClick = { onIrARegistro(rol) }) {
-                        Text("¿No tienes cuenta? Crear cuenta")
-                    }
-                    TextButton(onClick = { correoRecuperacion = state.cuenta; mensajeRecuperacion = null; recuperar = true }) {
-                        Text("¿Olvidaste tu contraseña?")
-                    }
+                BotonPrincipal(
+                    texto = "Iniciar sesión",
+                    onClick = { usuariosViewModel.iniciarSesion() }
+                )
+                TextButton(onClick = { onIrARegistro("usuario") }) {
+                    Text("¿No tienes cuenta? Crear cuenta (Usuario Final)")
+                }
+                TextButton(onClick = { correoRecuperacion = state.cuenta; mensajeRecuperacion = null; recuperar = true }) {
+                    Text("¿Olvidaste tu contraseña?")
                 }
             }
             Spacer(Modifier.height(Dimens.espacioGrande))

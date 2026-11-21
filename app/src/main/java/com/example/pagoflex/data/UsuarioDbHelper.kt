@@ -178,6 +178,26 @@ class UsuarioDbHelper(context: Context) :
         db.execSQL(SQL_PRECARGAR_ROLES)
         crearTablasComplementarias(db)
         crearTriggerComprobantesInmutables(db)
+
+        // Seed default accounts for testing all roles
+        val cuentasDemo = listOf(
+            Triple("Agente Demo", "agente@pagoflex.cl", Rol.ID_AGENTE),
+            Triple("Ejecutivo Demo", "ejecutivo@pagoflex.cl", Rol.ID_EJECUTIVO),
+            Triple("Usuario Final", "usuario@pagoflex.cl", Rol.ID_USUARIO)
+        )
+        for ((nombre, correo, rolId) in cuentasDemo) {
+            val (hash, salt) = protegerContrasena("Password123*")
+            val values = ContentValues().apply {
+                put(USU_NOMBRE, nombre)
+                put(USU_CUENTA, correo)
+                put(USU_CIUDAD, "Santiago")
+                put(USU_RUT, "12345678-9")
+                put(USU_CONTRASENA, hash)
+                put(USU_SALT, salt)
+                put(USU_ROL, rolId)
+            }
+            db.insert(TABLA_USUARIOS, null, values)
+        }
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -230,7 +250,39 @@ class UsuarioDbHelper(context: Context) :
 
     override fun onOpen(db: SQLiteDatabase) {
         super.onOpen(db)
-        if (!db.isReadOnly) sembrarDatosDemoPendientes(db)
+        if (!db.isReadOnly) {
+            asegurarCuentasDemo(db)
+            sembrarDatosDemoPendientes(db)
+        }
+    }
+
+    private fun asegurarCuentasDemo(db: SQLiteDatabase) {
+        val cuentasDemo = listOf(
+            Triple("Agente Demo", "agente@pagoflex.cl", Rol.ID_AGENTE),
+            Triple("Ejecutivo Demo", "ejecutivo@pagoflex.cl", Rol.ID_EJECUTIVO),
+            Triple("Usuario Final", "usuario@pagoflex.cl", Rol.ID_USUARIO)
+        )
+        for ((nombre, correo, rolId) in cuentasDemo) {
+            val cursor = db.rawQuery("SELECT $USU_ID FROM $TABLA_USUARIOS WHERE $USU_CUENTA = ?", arrayOf(correo))
+            val existe = cursor.moveToFirst()
+            cursor.close()
+            if (!existe) {
+                val (hash, salt) = protegerContrasena("Password123*")
+                val values = ContentValues().apply {
+                    put(USU_NOMBRE, nombre)
+                    put(USU_CUENTA, correo)
+                    put(USU_CIUDAD, "Santiago")
+                    put(USU_RUT, "12345678-9")
+                    put(USU_CONTRASENA, hash)
+                    put(USU_SALT, salt)
+                    put(USU_ROL, rolId)
+                }
+                val id = db.insert(TABLA_USUARIOS, null, values)
+                if (id > 0L) {
+                    sembrarDatosDemoUsuario(db, id, rolId, nombre)
+                }
+            }
+        }
     }
 
     private fun sembrarDatosDemoPendientes(db: SQLiteDatabase) {
@@ -1347,6 +1399,33 @@ class UsuarioDbHelper(context: Context) :
     fun validarLogin(cuenta: String, contrasena: String, rolId: Long): Usuario? {
         val usuario = buscarPorCuenta(cuenta) ?: return null
         if (usuario.rolId != rolId) return null
+
+        // Migra al formato protegido cuentas antiguas que aún no tenían salt.
+        if (usuario.contrasenaSalt.isBlank()) {
+            if (usuario.contrasena != contrasena) return null
+            val (hash, salt) = protegerContrasena(contrasena)
+            val actualizado = ContentValues().apply {
+                put(USU_CONTRASENA, hash)
+                put(USU_SALT, salt)
+            }
+            val filas = writableDatabase.update(
+                TABLA_USUARIOS,
+                actualizado,
+                "$USU_ID = ? AND $USU_SALT = ''",
+                arrayOf(usuario.id.toString())
+            )
+            return if (filas == 1) buscarPorId(usuario.id) else null
+        }
+
+        val salt = usuario.contrasenaSalt.hexToBytes()
+        val (hash, _) = protegerContrasena(contrasena, salt)
+        return usuario.takeIf {
+            MessageDigest.isEqual(it.contrasena.toByteArray(), hash.toByteArray())
+        }
+    }
+
+    fun validarLogin(cuenta: String, contrasena: String): Usuario? {
+        val usuario = buscarPorCuenta(cuenta) ?: return null
 
         // Migra al formato protegido cuentas antiguas que aún no tenían salt.
         if (usuario.contrasenaSalt.isBlank()) {

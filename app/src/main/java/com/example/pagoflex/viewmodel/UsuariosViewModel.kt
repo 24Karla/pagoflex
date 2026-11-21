@@ -172,18 +172,12 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
             return false
         }
 
-        val rolSeleccionado = estado.rolSeleccionado
-        if (rolSeleccionado == null) {
-            _loginUiState.value = estado.copy(errorGeneral = "Primero selecciona tu tipo de usuario.")
-            return false
-        }
-
         val db = dbHelper
         if (db == null) {
             _loginUiState.value = estado.copy(errorGeneral = "No se pudo abrir la base local de cuentas.")
             return false
         }
-        val usuario = db.validarLogin(cuenta, contrasena, Rol.rutaStringARolId(rolSeleccionado))
+        val usuario = db.validarLogin(cuenta, contrasena)
         if (usuario == null) {
             _loginUiState.value = estado.copy(errorGeneral = "Correo o contraseña incorrectos")
             return false
