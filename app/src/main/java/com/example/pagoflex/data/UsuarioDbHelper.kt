@@ -252,7 +252,15 @@ class UsuarioDbHelper(context: Context) :
         super.onOpen(db)
         if (!db.isReadOnly) {
             asegurarCuentasDemo(db)
-            sembrarDatosDemoPendientes(db)
+            try {
+                db.execSQL("DELETE FROM compromisos")
+                db.execSQL("DELETE FROM pagos")
+                db.execSQL("DELETE FROM reportes")
+                db.execSQL("DELETE FROM empresas")
+                db.execSQL("DELETE FROM comprobantes")
+                db.execSQL("DELETE FROM recomendaciones")
+                db.execSQL("DELETE FROM auditoria")
+            } catch (e: Exception) {}
         }
     }
 
