@@ -253,6 +253,7 @@ class UsuarioDbHelper(context: Context) :
         if (!db.isReadOnly) {
             asegurarCuentasDemo(db)
             try {
+                db.execSQL("PRAGMA foreign_keys = OFF;")
                 db.execSQL("DELETE FROM compromisos")
                 db.execSQL("DELETE FROM pagos")
                 db.execSQL("DELETE FROM reportes")
@@ -260,6 +261,7 @@ class UsuarioDbHelper(context: Context) :
                 db.execSQL("DELETE FROM comprobantes")
                 db.execSQL("DELETE FROM recomendaciones")
                 db.execSQL("DELETE FROM auditoria")
+                db.execSQL("PRAGMA foreign_keys = ON;")
             } catch (e: Exception) {}
         }
     }
@@ -302,6 +304,7 @@ class UsuarioDbHelper(context: Context) :
     }
 
     private fun sembrarDatosDemoUsuario(db: SQLiteDatabase, usuarioId: Long, rolId: Long, nombre: String) {
+        if (rolId == Rol.ID_EJECUTIVO || rolId == Rol.ID_AGENTE) return
         db.query(
             TABLA_SEMILLAS_DEMO, arrayOf(SEMILLA_USUARIO_ID),
             "$SEMILLA_USUARIO_ID = ?",
