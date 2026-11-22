@@ -160,7 +160,15 @@ fun AppNavegacion(
         }
 
         composable(Ruta.Configuraciones.ruta) {
-            ConfiguracionesScreen(onVolver = { navController.navigateUp() })
+            ConfiguracionesScreen(
+                onVolver = { navController.navigateUp() },
+                onCerrarSesion = {
+                    usuariosViewModel.cerrarSesion()
+                    navController.navigate(Ruta.Login.ruta) {
+                        popUpTo(navController.graph.id) { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable(Ruta.Compromisos.ruta) {

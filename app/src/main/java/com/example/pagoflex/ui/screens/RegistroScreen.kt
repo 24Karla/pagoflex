@@ -6,12 +6,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -20,22 +24,27 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.app.Application
+import androidx.lifecycle.ViewModelProvider
+import com.example.pagoflex.data.UsuarioDbHelper
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.CampoContrasena
 import com.example.pagoflex.ui.components.TarjetaSeccion
 import com.example.pagoflex.ui.theme.Dimens
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 import com.example.pagoflex.viewmodel.UsuariosViewModel
-import android.app.Application
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.ViewModelProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +60,25 @@ fun RegistroScreen(
     }
 ) {
     val state by usuariosViewModel.registroUiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val comunasLista = remember {
+        try {
+            UsuarioDbHelper(context).obtenerComunas()
+        } catch (e: Exception) {
+            listOf(
+                "Santiago", "Cerrillos", "Cerro Navia", "Conchalí", "El Bosque",
+                "Estación Central", "Huechuraba", "Independencia", "La Cisterna",
+                "La Florida", "La Granja", "La Pintana", "La Reina", "Las Condes",
+                "Lo Barnechea", "Lo Espejo", "Lo Prado", "Macul", "Maipú", "Ñuñoa",
+                "Pedro Aguirre Cerda", "Peñalolén", "Providencia", "Pudahuel",
+                "Quilicura", "Quinta Normal", "Recoleta", "Renca", "San Joaquín",
+                "San Miguel", "San Ramón", "Vitacura", "Puente Alto", "San Bernardo",
+                "Viña del Mar", "Valparaíso", "Concepción", "Antofagasta", "Temuco",
+                "Rancagua", "Talca", "Arica", "Iquique", "Puerto Montt"
+            )
+        }
+    }
+    var expandedComuna by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.registroExitoso) {
         if (state.registroExitoso) onRegistroExitoso(state.rolDestino)
@@ -115,15 +143,41 @@ fun RegistroScreen(
                     supportingText = { state.errorCuenta?.let { Text(it) } },
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    value = state.ciudad,
-                    onValueChange = usuariosViewModel::onRegistroCiudadCambia,
-                    label = { Text("Ciudad / Comuna") },
-                    singleLine = true,
-                    isError = state.errorCiudad != null,
-                    supportingText = { state.errorCiudad?.let { Text(it) } },
+
+                // Comunas ExposedDropdownMenuBox (Material 3 standard)
+                ExposedDropdownMenuBox(
+                    expanded = expandedComuna,
+                    onExpandedChange = { expandedComuna = it },
                     modifier = Modifier.fillMaxWidth()
-                )
+                ) {
+                    OutlinedTextField(
+                        value = state.ciudad.ifEmpty { "Seleccione Comuna" },
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Comuna (Santiago / Región)") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedComuna) },
+                        isError = state.errorCiudad != null,
+                        supportingText = { state.errorCiudad?.let { Text(it) } },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedComuna,
+                        onDismissRequest = { expandedComuna = false },
+                        modifier = Modifier.heightIn(max = 280.dp)
+                    ) {
+                        comunasLista.forEach { comuna ->
+                            DropdownMenuItem(
+                                text = { Text(comuna) },
+                                onClick = {
+                                    usuariosViewModel.onRegistroCiudadCambia(comuna)
+                                    expandedComuna = false
+                                }
+                            )
+                        }
+                    }
+                }
             }
 
             TarjetaSeccion(titulo = "Seguridad") {

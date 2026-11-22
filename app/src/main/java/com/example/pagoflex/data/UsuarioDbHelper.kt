@@ -1327,9 +1327,7 @@ class UsuarioDbHelper(context: Context) :
             usuario.copy(contrasena = hash, contrasenaSalt = salt)
         } else usuario
         val db = writableDatabase
-        val id = db.insert(TABLA_USUARIOS, null, valoresDe(usuarioProtegido))
-        if (id > 0L) sembrarDatosDemoUsuario(db, id, usuarioProtegido.rolId, usuarioProtegido.nombre)
-        return id
+        return db.insert(TABLA_USUARIOS, null, valoresDe(usuarioProtegido))
     }
 
     fun crearCuenta(nombre: String, cuenta: String, ciudad: String, rut: String, contrasena: String, rolId: Long): Long =
@@ -1460,6 +1458,20 @@ class UsuarioDbHelper(context: Context) :
             put(USU_CONTRASENA, hash)
             put(USU_SALT, salt)
         }, "$USU_ID = ?", arrayOf(usuarioId.toString())) == 1
+    }
+
+    fun obtenerComunas(): List<String> {
+        return listOf(
+            "Santiago", "Cerrillos", "Cerro Navia", "Conchalí", "El Bosque",
+            "Estación Central", "Huechuraba", "Independencia", "La Cisterna",
+            "La Florida", "La Granja", "La Pintana", "La Reina", "Las Condes",
+            "Lo Barnechea", "Lo Espejo", "Lo Prado", "Macul", "Maipú", "Ñuñoa",
+            "Pedro Aguirre Cerda", "Peñalolén", "Providencia", "Pudahuel",
+            "Quilicura", "Quinta Normal", "Recoleta", "Renca", "San Joaquín",
+            "San Miguel", "San Ramón", "Vitacura", "Puente Alto", "San Bernardo",
+            "Viña del Mar", "Valparaíso", "Concepción", "Antofagasta", "Temuco",
+            "Rancagua", "Talca", "Arica", "Iquique", "Puerto Montt"
+        )
     }
 
     fun eliminarUsuario(id: Long): Int =

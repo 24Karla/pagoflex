@@ -73,6 +73,17 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
     private val _registroUiState = MutableStateFlow(RegistroUiState())
     val registroUiState: StateFlow<RegistroUiState> = _registroUiState.asStateFlow()
 
+    fun actualizarNombre(nuevoNombre: String): ResultadoOperacion {
+        val nombreLimpio = nuevoNombre.trim()
+        if (nombreLimpio.isBlank() || !nombreLimpio.all { it.isLetter() || it.isWhitespace() }) {
+            return ResultadoOperacion(false, "El nombre solo debe contener letras y espacios.")
+        }
+        val usuario = obtenerUsuarioSesion() ?: return ResultadoOperacion(false, "Inicia sesión para actualizar tu nombre.")
+        val usuarioActualizado = usuario.copy(nombre = nombreLimpio)
+        val filas = dbHelper?.actualizarUsuario(usuarioActualizado) ?: 0
+        return if (filas > 0) ResultadoOperacion(true, "Nombre actualizado correctamente.") else ResultadoOperacion(false, "No se pudo actualizar el nombre.")
+    }
+
     fun actualizarRutCuenta(valor: String): com.example.pagoflex.model.ResultadoOperacion {
         val rut = normalizarRutChile(valor)
             ?: return com.example.pagoflex.model.ResultadoOperacion(false, "Ingresa un RUT chileno válido (módulo 11).")
@@ -123,6 +134,16 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
             return db.buscarPorId(idSesion)
         }
         return null
+    }
+
+    fun eliminarCuentaActual(): Boolean {
+        val usuario = obtenerUsuarioSesion() ?: return false
+        val eliminado = dbHelper?.eliminarUsuario(usuario.id) ?: 0
+        if (eliminado > 0) {
+            sesionPrefs?.borrar()
+            return true
+        }
+        return false
     }
 
     fun onLoginCuentaCambia(valor: String) {
@@ -243,8 +264,7 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
             else -> null
         }
         val errCiudad = when {
-            ciudad.isBlank() -> "La ciudad es obligatoria"
-            !ciudad.matches(Regex("[\\p{L}]+(?:[ '-][\\p{L}]+)*")) -> "Ingresa una ciudad válida usando solo letras"
+            ciudad.isBlank() -> "La comuna es obligatoria"
             else -> null
         }
         val errRut = if (rut == null) "Ingresa un RUT chileno válido (módulo 11)." else null

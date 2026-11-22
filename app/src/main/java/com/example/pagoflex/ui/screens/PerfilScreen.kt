@@ -1,7 +1,9 @@
 package com.example.pagoflex.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -56,19 +58,21 @@ fun PerfilScreen(
 ) {
     val context = LocalContext.current
     val usuario = remember { usuariosViewModel.obtenerUsuarioSesion() }
-    val nombre = usuario?.nombre ?: "Cuenta no disponible"
     val correo = usuario?.cuenta ?: "—"
     val ciudad = usuario?.ciudad?.ifBlank { "—" } ?: "—"
+
+    var nombreActual by remember(usuario?.id) { mutableStateOf(usuario?.nombre.orEmpty()) }
+    var editarNombre by remember { mutableStateOf(false) }
+    var nombreIngresado by remember { mutableStateOf("") }
+    var errorNombre by remember { mutableStateOf<String?>(null) }
+
     var rutActual by remember(usuario?.id) { mutableStateOf(usuario?.rut.orEmpty()) }
     var editarRut by remember { mutableStateOf(false) }
     var rutIngresado by remember { mutableStateOf("") }
     var errorRut by remember { mutableStateOf<String?>(null) }
-    var cambiarClave by remember { mutableStateOf(false) }
-    var claveActual by remember { mutableStateOf("") }
-    var claveNueva by remember { mutableStateOf("") }
-    var mensajeClave by remember { mutableStateOf<String?>(null) }
+
     val rutEnmascarado = rutActual.takeIf { it.length >= 4 }?.let { "${it.take(2)}.*.*-${it.last()}" } ?: "No registrado"
-    val iniciales = nombre.split(" ")
+    val iniciales = nombreActual.split(" ")
         .mapNotNull { it.firstOrNull()?.toString() }
         .take(2)
         .joinToString("")
@@ -107,6 +111,38 @@ fun PerfilScreen(
         )
     }
 
+    if (editarNombre) {
+        AlertDialog(
+            onDismissRequest = { editarNombre = false; errorNombre = null },
+            title = { Text("Editar nombre de usuario") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
+                    OutlinedTextField(
+                        value = nombreIngresado,
+                        onValueChange = { if (it.all { char -> char.isLetter() || char.isWhitespace() }) { nombreIngresado = it; errorNombre = null } },
+                        label = { Text("Nombre (solo letras)") },
+                        singleLine = true,
+                        isError = errorNombre != null
+                    )
+                    errorNombre?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val resultado = usuariosViewModel.actualizarNombre(nombreIngresado)
+                    if (resultado.exitoso) {
+                        nombreActual = nombreIngresado.trim()
+                        editarNombre = false
+                        errorNombre = null
+                    } else {
+                        errorNombre = resultado.mensaje
+                    }
+                }) { Text("Guardar") }
+            },
+            dismissButton = { TextButton(onClick = { editarNombre = false; errorNombre = null }) { Text("Cancelar") } }
+        )
+    }
+
     if (editarRut) {
         AlertDialog(
             onDismissRequest = { editarRut = false; errorRut = null },
@@ -137,34 +173,7 @@ fun PerfilScreen(
             dismissButton = { TextButton(onClick = { editarRut = false; errorRut = null }) { Text("Cancelar") } }
         )
     }
-    if (cambiarClave) {
-        AlertDialog(
-            onDismissRequest = { cambiarClave = false },
-            title = { Text("Cambiar contraseña") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
-                    com.example.pagoflex.ui.components.CampoContrasena(
-                        valor = claveActual,
-                        onValorCambiado = { claveActual = it },
-                        etiqueta = "Contraseña actual"
-                    )
-                    com.example.pagoflex.ui.components.CampoContrasena(
-                        valor = claveNueva,
-                        onValorCambiado = { claveNueva = it },
-                        etiqueta = "Nueva contraseña"
-                    )
-                    Text("Mínimo 8 caracteres, mayúscula, minúscula, número y carácter especial.")
-                    mensajeClave?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                }
-            },
-            confirmButton = { TextButton(onClick = {
-                val resultado = usuariosViewModel.cambiarContrasena(claveActual, claveNueva)
-                mensajeClave = resultado.mensaje
-                if (resultado.exitoso) cambiarClave = false
-            }) { Text("Actualizar") } },
-            dismissButton = { TextButton(onClick = { cambiarClave = false }) { Text("Cancelar") } }
-        )
-    }
+
     Scaffold(
         topBar = { CenterAlignedTopAppBar(title = { Text("Mi Perfil", fontWeight = FontWeight.Bold) }) },
         containerColor = MaterialTheme.colorScheme.background
@@ -184,7 +193,17 @@ fun PerfilScreen(
                 Text(if (tieneFoto) "Cambiar foto" else "Añadir foto")
             }
             mensajeFoto?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Text(text = nombre, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+
+            // Nombre de usuario clickeable para editar
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico),
+                modifier = Modifier.clickable { nombreIngresado = nombreActual; errorNombre = null; editarNombre = true }
+            ) {
+                Text(text = nombreActual, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(text = "✎", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            }
+
             Text(text = correo, style = MaterialTheme.typography.bodyMedium)
             TarjetaSeccion(titulo = "Información Personal") {
                 Text("Ciudad: $ciudad")
@@ -197,7 +216,6 @@ fun PerfilScreen(
             }
             Spacer(modifier = Modifier.height(Dimens.espacioChico))
             BotonPrincipal(texto = "Configuraciones", onClick = onIrConfiguraciones)
-            BotonSecundario(texto = "Cambiar contraseña", onClick = { claveActual = ""; claveNueva = ""; mensajeClave = null; cambiarClave = true })
             BotonSecundario(texto = "Cerrar sesión", onClick = onCerrarSesion)
             BotonSecundario(texto = "Volver", onClick = onVolver)
         }
