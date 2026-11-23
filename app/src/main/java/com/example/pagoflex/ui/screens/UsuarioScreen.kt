@@ -38,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pagoflex.R
 import com.example.pagoflex.ui.components.BotonPrincipal
+import com.example.pagoflex.ui.components.BotonSecundario
 import com.example.pagoflex.ui.components.CampoContrasena
 import com.example.pagoflex.ui.components.TarjetaSeccion
 import com.example.pagoflex.ui.theme.Dimens
@@ -47,6 +48,10 @@ import android.app.Application
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import com.example.pagoflex.ui.theme.PreferenciasTema
+import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 
 @Composable
 fun UsuarioScreen(
@@ -60,12 +65,25 @@ fun UsuarioScreen(
         )
     }
 ) {
+    val context = LocalContext.current
     val state by usuariosViewModel.loginUiState.collectAsStateWithLifecycle()
     var recuperar by remember { mutableStateOf(false) }
     var correoRecuperacion by remember { mutableStateOf("") }
     var rutRecuperacion by remember { mutableStateOf("") }
     var claveNueva by remember { mutableStateOf("") }
     var mensajeRecuperacion by remember { mutableStateOf<String?>(null) }
+
+    fun vibrarDispositivo() {
+        try {
+            val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator?.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator?.vibrate(100)
+            }
+        } catch (e: Exception) {}
+    }
 
     if (recuperar) AlertDialog(
         onDismissRequest = { recuperar = false },
@@ -84,6 +102,7 @@ fun UsuarioScreen(
             }
         },
         confirmButton = { TextButton(onClick = {
+            vibrarDispositivo()
             val resultado = usuariosViewModel.recuperarContrasena(correoRecuperacion, rutRecuperacion, claveNueva)
             mensajeRecuperacion = resultado.mensaje
             if (resultado.exitoso) recuperar = false
@@ -153,7 +172,10 @@ fun UsuarioScreen(
                 Spacer(Modifier.height(Dimens.espacioChico))
                 BotonPrincipal(
                     texto = "Iniciar sesión",
-                    onClick = { usuariosViewModel.iniciarSesion() }
+                    onClick = {
+                        vibrarDispositivo()
+                        usuariosViewModel.iniciarSesion()
+                    }
                 )
                 TextButton(onClick = { onIrARegistro("usuario") }) {
                     Text("¿No tienes cuenta? Crear cuenta (Usuario Final)")

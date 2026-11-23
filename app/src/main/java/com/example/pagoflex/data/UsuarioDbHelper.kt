@@ -591,6 +591,21 @@ class UsuarioDbHelper(context: Context) :
             "$EMPRESA_CUENTA_DEMO_ID = ? OR $EMPRESA_EJECUTIVO_ID = ?",
             arrayOf(usuarioId.toString(), usuarioId.toString()), null, null, EMPRESA_NOMBRE
         ).use { cursor -> while (cursor.moveToNext()) resultado += leerEmpresa(cursor) }
+
+        if (resultado.isEmpty() && buscarPorId(usuarioId)?.rolId == Rol.ID_EJECUTIVO) {
+            val idEmpresa = writableDatabase.insert(TABLA_EMPRESAS, null, ContentValues().apply {
+                put(EMPRESA_NOMBRE, "Empresa Demostración S.A.")
+                put(EMPRESA_RECARGO, 2000L)
+                put(EMPRESA_TELEFONO, "+56 2 2000 0000")
+                put(EMPRESA_CORREO, "contacto@empresa.cl")
+                put(EMPRESA_EJECUTIVO_ID, usuarioId)
+                put(EMPRESA_CUENTA_DEMO_ID, usuarioId)
+                put(EMPRESA_ES_DEMO, 0)
+            })
+            if (idEmpresa > 0L) {
+                return listarEmpresasDeCuenta(usuarioId)
+            }
+        }
         return resultado
     }
 

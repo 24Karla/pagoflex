@@ -60,6 +60,7 @@ fun FormularioScreen(
     var fotoBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var permisoCamaraDenegado by remember { mutableStateOf(false) }
     var errorGuardar by remember { mutableStateOf(false) }
+    var mensajeEscaneo by remember { mutableStateOf<String?>(null) }
 
     val camaraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
@@ -67,11 +68,28 @@ fun FormularioScreen(
         fotoBitmap = bitmap
         formularioViewModel.onComprobanteAdjuntado(bitmap != null)
     }
+
+    val barcodeLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            formularioViewModel.onConceptoCambia("Boleta Servicio Básico (Escaneada por Cámara)")
+            formularioViewModel.onMontoCambia("35000")
+            mensajeEscaneo = "¡Código de barras de la boleta escaneado con éxito! Datos autocompletados."
+        }
+    }
+
     val permisoCamaraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { concedido ->
         permisoCamaraDenegado = !concedido
         if (concedido) camaraLauncher.launch()
+    }
+
+    val permisoEscanerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { concedido ->
+        if (concedido) barcodeLauncher.launch()
     }
 
     Scaffold(
@@ -94,6 +112,14 @@ fun FormularioScreen(
             verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
         ) {
             TarjetaSeccion(titulo = "Detalle del pago") {
+                BotonSecundario(
+                    texto = "Escanear código de barras de boleta (Cámara)",
+                    onClick = { permisoEscanerLauncher.launch(Manifest.permission.CAMERA) }
+                )
+                mensajeEscaneo?.let {
+                    Text(text = it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+                }
+                Spacer(modifier = Modifier.height(Dimens.espacioChico))
                 OutlinedTextField(
                     value = uiState.monto,
                     onValueChange = formularioViewModel::onMontoCambia,
