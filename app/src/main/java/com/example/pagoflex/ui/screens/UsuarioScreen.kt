@@ -49,14 +49,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import com.example.pagoflex.ui.theme.PreferenciasTema
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.example.pagoflex.BuildConfig
 
 @Composable
 fun UsuarioScreen(
     onLoginExitoso: (String) -> Unit = {},
-    onIrARegistro: (String) -> Unit = {},
+    onIrARegistro: () -> Unit = {},
     usuariosViewModel: UsuariosViewModel = run {
         val context = LocalContext.current
         val app = (context.applicationContext as? Application) ?: Application()
@@ -67,6 +71,14 @@ fun UsuarioScreen(
 ) {
     val context = LocalContext.current
     val state by usuariosViewModel.loginUiState.collectAsStateWithLifecycle()
+    val permisoRedLocal = "android.permission.ACCESS_LOCAL_NETWORK"
+    val solicitarPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
+        if (concedido) usuariosViewModel.iniciarSesion()
+        else usuariosViewModel.informarPermisoLoginDenegado()
+    }
+    LaunchedEffect(state.requierePermisoRed) {
+        if (state.requierePermisoRed) solicitarPermiso.launch(permisoRedLocal)
+    }
     var recuperar by remember { mutableStateOf(false) }
     var correoRecuperacion by remember { mutableStateOf("") }
     var rutRecuperacion by remember { mutableStateOf("") }
@@ -146,6 +158,7 @@ fun UsuarioScreen(
             TarjetaSeccion(titulo = "Credenciales de Acceso") {
                 OutlinedTextField(
                     value = state.cuenta,
+                    enabled = !state.iniciandoSesion,
                     onValueChange = usuariosViewModel::onLoginCuentaCambia,
                     label = { Text("Correo electrónico") },
                     placeholder = { Text("nombre@correo.com") },
@@ -161,7 +174,8 @@ fun UsuarioScreen(
                 CampoContrasena(
                     valor = state.contrasena,
                     onValorCambiado = usuariosViewModel::onLoginContrasenaCambia,
-                    etiqueta = "Contraseña"
+                    etiqueta = "Contraseña",
+                    enabled = !state.iniciandoSesion
                 )
                 state.errorContrasena?.let {
                     Text(it, color = MaterialTheme.colorScheme.error)
@@ -171,16 +185,23 @@ fun UsuarioScreen(
                 }
                 Spacer(Modifier.height(Dimens.espacioChico))
                 BotonPrincipal(
-                    texto = "Iniciar sesión",
+                    texto = if (state.iniciandoSesion) "Iniciando sesión…" else "Iniciar sesión",
+                    enabled = !state.iniciandoSesion,
                     onClick = {
                         vibrarDispositivo()
-                        usuariosViewModel.iniciarSesion()
+                        val requierePermiso = Build.VERSION.SDK_INT >= 37 &&
+                            BuildConfig.GATEWAY_URL.startsWith("http://") &&
+                            context.checkSelfPermission(permisoRedLocal) != PackageManager.PERMISSION_GRANTED
+                        usuariosViewModel.iniciarSesion(puedeConsultarServidor = !requierePermiso)
                     }
                 )
-                TextButton(onClick = { onIrARegistro("usuario") }) {
-                    Text("¿No tienes cuenta? Crear cuenta (Usuario Final)")
+                TextButton(onClick = onIrARegistro, enabled = !state.iniciandoSesion) {
+                    Text("¿No tienes cuenta? Crear cuenta")
                 }
-                TextButton(onClick = { correoRecuperacion = state.cuenta; mensajeRecuperacion = null; recuperar = true }) {
+                TextButton(
+                    onClick = { correoRecuperacion = state.cuenta; mensajeRecuperacion = null; recuperar = true },
+                    enabled = !state.iniciandoSesion
+                ) {
                     Text("¿Olvidaste tu contraseña?")
                 }
             }

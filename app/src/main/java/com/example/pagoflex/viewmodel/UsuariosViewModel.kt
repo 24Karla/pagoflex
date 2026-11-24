@@ -31,6 +31,8 @@ data class LoginUiState(
     val errorCuenta: String? = null,
     val errorContrasena: String? = null,
     val errorGeneral: String? = null,
+    val iniciandoSesion: Boolean = false,
+    val requierePermisoRed: Boolean = false,
     val loginExitoso: Boolean = false,
     val rolSeleccionado: String? = "usuario",
     val rolDestino: String = "usuario",
@@ -44,7 +46,6 @@ data class RegistroUiState(
     val rut: String = "",
     val contrasena: String = "",
     val confirmarContrasena: String = "",
-    val rolId: Long = Rol.ID_USUARIO,
     val errorNombre: String? = null,
     val errorCuenta: String? = null,
     val errorCiudad: String? = null,
@@ -181,8 +182,16 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
         )
     }
 
-    fun iniciarSesion(): Boolean {
+    fun informarPermisoLoginDenegado() {
+        _loginUiState.value = _loginUiState.value.copy(
+            requierePermisoRed = false,
+            errorGeneral = "Permite el acceso a la red local para iniciar sesión con tu cuenta del servidor."
+        )
+    }
+
+    fun iniciarSesion(puedeConsultarServidor: Boolean = true) {
         val estado = _loginUiState.value
+        if (estado.iniciandoSesion) return
         val cuenta = estado.cuenta.trim().lowercase()
         val contrasena = estado.contrasena.trim()
 
@@ -198,30 +207,62 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
                 errorCuenta = errCuenta,
                 errorContrasena = errContrasena
             )
-            return false
+            return
         }
-
-        val db = dbHelper
-        if (db == null) {
-            _loginUiState.value = estado.copy(errorGeneral = "No se pudo abrir la base local de cuentas.")
-            return false
-        }
-        val usuario = db.validarLogin(cuenta, contrasena)
-        if (usuario == null) {
-            _loginUiState.value = estado.copy(errorGeneral = "Correo o contraseña incorrectos")
-            return false
-        }
-
-        sesionPrefs?.guardar(usuario.id)
-        val rolRuta = Rol.rolIdARutaString(usuario.rolId)
 
         _loginUiState.value = estado.copy(
-            loginExitoso = true,
-            rolDestino = rolRuta,
-            usuarioLogueado = usuario,
+            iniciandoSesion = true,
+            requierePermisoRed = false,
             errorGeneral = null
         )
-        return true
+        viewModelScope.launch {
+            try {
+                val db = dbHelper ?: error("No se pudo abrir la base local de cuentas.")
+                val prefs = sesionPrefs ?: error("No se pudo preparar la sesión local.")
+                val usuarioLocal = withContext(Dispatchers.IO) {
+                    db.validarLogin(cuenta, contrasena)
+                        ?: run {
+                            check(db.buscarPorCuenta(cuenta) == null) { "Correo o contraseña incorrectos" }
+                            null
+                        }
+                }
+                if (usuarioLocal == null && !puedeConsultarServidor) {
+                    _loginUiState.value = _loginUiState.value.copy(
+                        iniciandoSesion = false,
+                        requierePermisoRed = true
+                    )
+                    return@launch
+                }
+                val usuario = usuarioLocal ?: run {
+                    val remoto = usuarioRepository.iniciarSesion(cuenta, contrasena)
+                    check(remoto.cuenta.equals(cuenta, ignoreCase = true) &&
+                        remoto.rolId in Rol.ID_AGENTE..Rol.ID_USUARIO
+                    ) { "El servidor devolvió datos de cuenta inválidos." }
+                    withContext(Dispatchers.IO) {
+                        val idLocal = db.crearCuenta(
+                            remoto.nombre, remoto.cuenta, remoto.ciudad,
+                            remoto.rut, contrasena, remoto.rolId
+                        )
+                        db.buscarPorId(idLocal) ?: error("No se pudo guardar la cuenta en este teléfono.")
+                    }
+                }
+                prefs.guardar(usuario.id)
+                _loginUiState.value = _loginUiState.value.copy(
+                    iniciandoSesion = false,
+                    loginExitoso = true,
+                    rolDestino = Rol.rolIdARutaString(usuario.rolId),
+                    usuarioLogueado = usuario.copy(contrasena = "", contrasenaSalt = ""),
+                    contrasena = ""
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _loginUiState.value = _loginUiState.value.copy(
+                    iniciandoSesion = false,
+                    errorGeneral = e.message ?: "No se pudo iniciar sesión."
+                )
+            }
+        }
     }
 
     fun onRegistroNombreCambia(valor: String) {
@@ -246,10 +287,6 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
 
     fun onRegistroConfirmarContrasenaCambia(valor: String) {
         _registroUiState.value = _registroUiState.value.copy(confirmarContrasena = valor, errorConfirmarContrasena = null)
-    }
-
-    fun onRegistroRolCambia(rolId: Long) {
-        _registroUiState.value = _registroUiState.value.copy(rolId = rolId)
     }
 
     fun informarPermisoRedDenegado() {
@@ -313,7 +350,7 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
             ciudad = ciudad,
             rut = rut ?: return,
             contrasena = contrasena,
-            rolId = state.rolId
+            rolId = Rol.rolIdParaRegistro(cuenta)
         )
 
         _registroUiState.value = state.copy(registrando = true, errorGeneral = null)

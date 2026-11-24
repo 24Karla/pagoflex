@@ -30,7 +30,8 @@ fun CampoContrasena(
     modifier: Modifier = Modifier,
     etiqueta: String = "Contraseña",
     label: String = etiqueta,
-    esVisibleInicial: Boolean = false
+    esVisibleInicial: Boolean = false,
+    enabled: Boolean = true
 ) {
     var contrasenaVisible by remember { mutableStateOf(esVisibleInicial) }
     val textoActual = if (value != "") value else valor
@@ -39,6 +40,7 @@ fun CampoContrasena(
 
     OutlinedTextField(
         value = textoActual,
+        enabled = enabled,
         onValueChange = callback,
         label = { Text(textoEtiqueta) },
         singleLine = true,

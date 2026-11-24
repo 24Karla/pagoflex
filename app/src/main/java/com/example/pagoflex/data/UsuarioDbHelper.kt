@@ -36,7 +36,7 @@ class UsuarioDbHelper(context: Context) :
     SQLiteOpenHelper(context, NOMBRE_BD, null, VERSION_BD) {
     companion object {
         private const val NOMBRE_BD = "pagoflex.db"
-        private const val VERSION_BD = 10
+        private const val VERSION_BD = 11
         private const val TABLA_ROLES = "roles"
         private const val ROL_ID = "id_rol"
         private const val ROL_NOMBRE = "nombre_rol"
@@ -246,6 +246,25 @@ class UsuarioDbHelper(context: Context) :
         if (oldVersion < 8) migrarVinculoPagoCompromiso(db)
         if (oldVersion < 9) migrarContactosEmpresa(db)
         if (oldVersion < 10) migrarRutUsuario(db)
+        if (oldVersion < 11) migrarRolesDeRegistro(db)
+    }
+
+    private fun migrarRolesDeRegistro(db: SQLiteDatabase) {
+        val correcciones = mutableListOf<Pair<Long, Long>>()
+        db.query(
+            TABLA_USUARIOS, arrayOf(USU_ID, USU_CUENTA), "$USU_ROL = ?",
+            arrayOf(Rol.ID_USUARIO.toString()), null, null, null
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val rolId = Rol.rolIdParaRegistro(cursor.getString(1))
+                if (rolId != Rol.ID_USUARIO) correcciones.add(cursor.getLong(0) to rolId)
+            }
+        }
+        for ((id, rolId) in correcciones) {
+            db.update(TABLA_USUARIOS, ContentValues().apply {
+                put(USU_ROL, rolId)
+            }, "$USU_ID = ?", arrayOf(id.toString()))
+        }
     }
 
     override fun onOpen(db: SQLiteDatabase) {
