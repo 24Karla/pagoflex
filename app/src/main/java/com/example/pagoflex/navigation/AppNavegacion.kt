@@ -64,8 +64,7 @@ fun AppNavegacion(
                         popUpTo(Ruta.Login.ruta) { inclusive = true }
                     }
                 },
-                onIrARegistro = { rol ->
-                    usuariosViewModel.onRegistroRolCambia(Rol.rutaStringARolId(rol))
+                onIrARegistro = {
                     navController.navigate(Ruta.Registro.ruta)
                 }
             )

@@ -20,7 +20,14 @@ class UsuarioRepository(
 ) {
 
     suspend fun iniciarSesion(cuenta: String, contrasena: String): Usuario =
-        llamar { usuarioApi.iniciarSesion(LoginRequest(cuenta, contrasena)) }.aUsuario()
+        llamar {
+            try {
+                usuarioApi.iniciarSesion(LoginRequest(cuenta, contrasena)).aUsuario()
+            } catch (e: HttpException) {
+                if (e.code() == 401 || e.code() == 404) error("Correo o contraseña incorrectos")
+                throw e
+            }
+        }
 
     suspend fun registrar(usuario: Usuario): Usuario {
         val datos = RegistroRequest(
@@ -33,7 +40,11 @@ class UsuarioRepository(
         )
         return llamar {
             try {
-                usuarioApi.registrar(datos).aUsuario()
+                usuarioApi.registrar(datos).aUsuario().also {
+                    check(it.rolId == usuario.rolId) {
+                        "El servidor guardó la cuenta con un rol distinto al que corresponde a su correo."
+                    }
+                }
             } catch (conflicto: HttpException) {
                 if (conflicto.code() != 409) throw conflicto
                 // Un intento anterior pudo guardarse aunque el teléfono no recibiera la respuesta.
