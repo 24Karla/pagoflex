@@ -5,9 +5,11 @@ import com.example.pagoflex.model.ResultadoOperacion
 import android.app.Application
 import android.util.Patterns
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.pagoflex.data.PagoUsuario
 import com.example.pagoflex.data.SesionPreferencias
 import com.example.pagoflex.data.UsuarioDbHelper
+import com.example.pagoflex.data.UsuarioRepository
 import com.example.pagoflex.model.Rol
 import com.example.pagoflex.model.Compromiso
 import com.example.pagoflex.model.ComprobantePago
@@ -15,6 +17,10 @@ import com.example.pagoflex.model.ReporteIncidencia
 import com.example.pagoflex.model.RecomendacionOrganizacion
 import com.example.pagoflex.model.ResultadoPago
 import com.example.pagoflex.model.Usuario
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,11 +53,13 @@ data class RegistroUiState(
     val errorConfirmarContrasena: String? = null,
     val errorGeneral: String? = null,
     val registroExitoso: Boolean = false,
+    val registrando: Boolean = false,
     val rolDestino: String = "usuario",
     val usuarioCreado: Usuario? = null
 )
 
 class UsuariosViewModel(application: Application) : AndroidViewModel(application) {
+    private val usuarioRepository by lazy { UsuarioRepository() }
     private val dbHelper: UsuarioDbHelper? by lazy {
         try {
             UsuarioDbHelper(getApplication())
@@ -244,8 +252,19 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
         _registroUiState.value = _registroUiState.value.copy(rolId = rolId)
     }
 
-    fun registrarCuenta(): Boolean {
+    fun informarPermisoRedDenegado() {
+        _registroUiState.value = _registroUiState.value.copy(
+            errorGeneral = "Permite el acceso a la red local en los ajustes de Android para conectar con PagoFlex."
+        )
+    }
+
+    fun consumirRegistroExitoso() {
+        _registroUiState.value = RegistroUiState()
+    }
+
+    fun registrarCuenta() {
         val state = _registroUiState.value
+        if (state.registrando || state.registroExitoso) return
         val nombre = state.nombre.trim()
         val cuenta = state.cuenta.trim().lowercase()
         val ciudad = state.ciudad.trim()
@@ -282,50 +301,60 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
                 errorCiudad = errCiudad,
                 errorRut = errRut,
                 errorContrasena = errContrasena,
-                errorConfirmarContrasena = errConfirmar
+                errorConfirmarContrasena = errConfirmar,
+                errorGeneral = null
             )
-            return false
-        }
-
-        if (dbHelper?.buscarPorCuenta(cuenta) != null) {
-            _registroUiState.value = state.copy(
-                errorCuenta = "Ya existe una cuenta registrada con este correo"
-            )
-            return false
-        }
-
-        if (rut == null) return false
-        if (dbHelper?.buscarPorRut(rut) != null) {
-            _registroUiState.value = state.copy(errorRut = "Ya existe una cuenta con ese RUT.")
-            return false
+            return
         }
 
         val nuevoUsuario = Usuario(
             nombre = nombre,
             cuenta = cuenta,
             ciudad = ciudad,
-            rut = rut,
+            rut = rut ?: return,
             contrasena = contrasena,
             rolId = state.rolId
         )
 
-        val idNuevo = dbHelper?.crearCuenta(nombre, cuenta, ciudad, rut, contrasena, state.rolId) ?: -1L
-        if (idNuevo <= 0) {
-            _registroUiState.value = state.copy(
-                errorGeneral = "Error al guardar el usuario en la base de datos."
-            )
-            return false
+        _registroUiState.value = state.copy(registrando = true, errorGeneral = null)
+        viewModelScope.launch {
+            var registroRemotoConfirmado = false
+            try {
+                val db = dbHelper ?: error("No se pudo abrir la base local de cuentas.")
+                val prefs = sesionPrefs ?: error("No se pudo preparar la sesión local.")
+                withContext(Dispatchers.IO) {
+                    check(db.buscarPorCuenta(cuenta) == null) { "Ya existe una cuenta local con este correo." }
+                    check(db.buscarPorRut(nuevoUsuario.rut) == null) { "Ya existe una cuenta local con ese RUT." }
+                }
+                val usuario = usuarioRepository.registrar(nuevoUsuario)
+                registroRemotoConfirmado = true
+                val idLocal = withContext(Dispatchers.IO) {
+                    db.crearCuenta(
+                        usuario.nombre, usuario.cuenta, usuario.ciudad,
+                        usuario.rut, contrasena, usuario.rolId
+                    )
+                }
+                check(idLocal > 0)
+                prefs.guardar(idLocal)
+                _registroUiState.value = _registroUiState.value.copy(
+                    registrando = false,
+                    registroExitoso = true,
+                    rolDestino = Rol.rolIdARutaString(usuario.rolId),
+                    usuarioCreado = usuario.copy(id = idLocal, contrasena = ""),
+                    contrasena = "",
+                    confirmarContrasena = ""
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                val mensaje = if (registroRemotoConfirmado) {
+                    "La cuenta se guardó en el servidor, pero no se pudo preparar en este teléfono. Vuelve a intentar con los mismos datos."
+                } else {
+                    e.message ?: "No se pudo registrar la cuenta."
+                }
+                _registroUiState.value = _registroUiState.value.copy(registrando = false, errorGeneral = mensaje)
+            }
         }
-
-        sesionPrefs?.guardar(idNuevo)
-        val rolRuta = Rol.rolIdARutaString(state.rolId)
-
-        _registroUiState.value = state.copy(
-            registroExitoso = true,
-            rolDestino = rolRuta,
-            usuarioCreado = nuevoUsuario.copy(id = idNuevo, contrasena = "")
-        )
-        return true
     }
 
     fun listarCompromisosDeUsuario(userId: Long): List<Compromiso> =

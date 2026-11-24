@@ -1,5 +1,10 @@
 package com.example.pagoflex.ui.screens
 
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -38,6 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.app.Application
 import androidx.lifecycle.ViewModelProvider
+import com.example.pagoflex.BuildConfig
 import com.example.pagoflex.data.UsuarioDbHelper
 import com.example.pagoflex.ui.components.BotonPrincipal
 import com.example.pagoflex.ui.components.CampoContrasena
@@ -79,17 +85,27 @@ fun RegistroScreen(
         }
     }
     var expandedComuna by remember { mutableStateOf(false) }
+    val contexto = LocalContext.current
+    val permisoRedLocal = "android.permission.ACCESS_LOCAL_NETWORK"
+    val solicitarPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
+        if (concedido) usuariosViewModel.registrarCuenta()
+        else usuariosViewModel.informarPermisoRedDenegado()
+    }
 
     LaunchedEffect(state.registroExitoso) {
-        if (state.registroExitoso) onRegistroExitoso(state.rolDestino)
+        if (state.registroExitoso) {
+            usuariosViewModel.consumirRegistroExitoso()
+            onRegistroExitoso(state.rolDestino)
+        }
     }
+    BackHandler(enabled = state.registrando) {}
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Crear cuenta", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    TextButton(onClick = onVolver) { Text("‹ Volver") }
+                    TextButton(onClick = onVolver, enabled = !state.registrando) { Text("‹ Volver") }
                 }
             )
         },
@@ -204,8 +220,17 @@ fun RegistroScreen(
             }
 
             BotonPrincipal(
-                texto = "Crear cuenta",
-                onClick = { usuariosViewModel.registrarCuenta() },
+                texto = if (state.registrando) "Guardando…" else "Crear cuenta",
+                onClick = {
+                    if (Build.VERSION.SDK_INT >= 37 && BuildConfig.GATEWAY_URL.startsWith("http://") &&
+                        contexto.checkSelfPermission(permisoRedLocal) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        solicitarPermiso.launch(permisoRedLocal)
+                    } else {
+                        usuariosViewModel.registrarCuenta()
+                    }
+                },
+                enabled = !state.registrando && !state.registroExitoso,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(Dimens.espacioChico))
