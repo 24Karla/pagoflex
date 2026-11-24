@@ -1,7 +1,23 @@
+import java.net.URI
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+
+val localProperties = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use { load(it) }
+}
+val gatewayUrl = URI(
+    providers.gradleProperty("pagoflex.gatewayUrl").orNull
+        ?: localProperties.getProperty("pagoflex.gatewayUrl")
+        ?: "http://10.0.2.2:8080/"
+)
+require(
+    gatewayUrl.scheme in listOf("http", "https") && gatewayUrl.host != null &&
+        gatewayUrl.userInfo == null && gatewayUrl.rawQuery == null && gatewayUrl.rawFragment == null
+) { "pagoflex.gatewayUrl debe ser una URL HTTP o HTTPS sin credenciales, consulta ni fragmento." }
 
 android {
     namespace = "com.example.pagoflex"
@@ -17,9 +33,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "GATEWAY_URL", "\"${gatewayUrl.toASCIIString().trimEnd('/')}/\"")
+        manifestPlaceholders["pagoflexCleartext"] = "false"
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders["pagoflexCleartext"] = (gatewayUrl.scheme == "http").toString()
+        }
         release {
             optimization {
                 enable = true
@@ -33,6 +54,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
