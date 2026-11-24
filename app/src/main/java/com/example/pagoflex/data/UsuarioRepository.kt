@@ -31,7 +31,22 @@ class UsuarioRepository(
             rut = usuario.rut,
             rolId = usuario.rolId
         )
-        return llamar { usuarioApi.registrar(datos) }.aUsuario()
+        return llamar {
+            try {
+                usuarioApi.registrar(datos).aUsuario()
+            } catch (conflicto: HttpException) {
+                if (conflicto.code() != 409) throw conflicto
+                // Un intento anterior pudo guardarse aunque el teléfono no recibiera la respuesta.
+                val existente = try {
+                    usuarioApi.iniciarSesion(LoginRequest(usuario.cuenta, usuario.contrasena)).aUsuario()
+                } catch (e: HttpException) {
+                    if (e.code() == 401 || e.code() == 404) throw conflicto
+                    throw e
+                }
+                if (existente.rut != usuario.rut || existente.rolId != usuario.rolId) throw conflicto
+                existente
+            }
+        }
     }
 
     suspend fun obtener(id: Long): Usuario =
