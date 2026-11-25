@@ -286,10 +286,12 @@ class UsuarioDbHelper(context: Context) :
     }
 
     private fun asegurarCuentasDemo(db: SQLiteDatabase) {
+        db.delete(TABLA_USUARIOS, "$USU_CUENTA = ? OR $USU_CUENTA = ? OR $USU_CUENTA = ?", arrayOf("agente@pagoflex.cl", "ejecutivo@pagoflex.cl", "usuario@pagoflex.cl"))
+
         val cuentasDemo = listOf(
-            Triple("Agente Demo", "agente@pagoflex.cl", Rol.ID_AGENTE),
-            Triple("Ejecutivo Demo", "ejecutivo@pagoflex.cl", Rol.ID_EJECUTIVO),
-            Triple("Usuario Final", "usuario@pagoflex.cl", Rol.ID_USUARIO)
+            Triple("Agente Demo", "agente@agente.cl", Rol.ID_AGENTE),
+            Triple("Ejecutivo Demo", "ejecutivo@ejecutivo.cl", Rol.ID_EJECUTIVO),
+            Triple("Usuario Final", "usuario@usuario.cl", Rol.ID_USUARIO)
         )
         for ((nombre, correo, rolId) in cuentasDemo) {
             val cursor = db.rawQuery("SELECT $USU_ID FROM $TABLA_USUARIOS WHERE $USU_CUENTA = ?", arrayOf(correo))
@@ -306,10 +308,7 @@ class UsuarioDbHelper(context: Context) :
                     put(USU_SALT, salt)
                     put(USU_ROL, rolId)
                 }
-                val id = db.insert(TABLA_USUARIOS, null, values)
-                if (id > 0L) {
-                    sembrarDatosDemoUsuario(db, id, rolId, nombre)
-                }
+                db.insert(TABLA_USUARIOS, null, values)
             }
         }
     }

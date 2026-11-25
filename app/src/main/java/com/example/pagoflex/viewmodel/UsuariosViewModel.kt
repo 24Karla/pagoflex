@@ -350,7 +350,7 @@ class UsuariosViewModel(application: Application) : AndroidViewModel(application
             ciudad = ciudad,
             rut = rut ?: return,
             contrasena = contrasena,
-            rolId = Rol.rolIdParaRegistro(cuenta)
+            rolId = Rol.ID_USUARIO
         )
 
         _registroUiState.value = state.copy(registrando = true, errorGeneral = null)

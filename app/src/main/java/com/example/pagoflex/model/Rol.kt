@@ -9,13 +9,7 @@ data class Rol(
         const val ID_EJECUTIVO = 2L
         const val ID_USUARIO = 3L
 
-        fun rolIdParaRegistro(correo: String): Long = when (
-            correo.trim().substringAfterLast('@', "").lowercase()
-        ) {
-            "agente.cl" -> ID_AGENTE
-            "ejecutivo.cl", "gerente.cl" -> ID_EJECUTIVO
-            else -> ID_USUARIO
-        }
+        fun rolIdParaRegistro(correo: String): Long = ID_USUARIO
 
         fun rolIdARutaString(rolId: Long): String {
             return when (rolId) {
